@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijital İlahi Kitabı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-bg': '#0f172a',
+                        'secondary-bg': '#1e293b',
+                        'text-light': '#f8fafc',
+                        'text-subtle': '#94a3b8',
+                        'highlight-blue': '#a5b4fc',
+                        'highlight-red': '#f87171'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            transition: background-color 0.5s ease-in-out;
+            margin: 0;
+            padding: 0;
+        }
+
+        .lyrics-line {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #94a3b8;
+            opacity: 0.7;
+            padding: 0.5rem 0;
+            transition: all 0.4s ease-in-out;
+            cursor: pointer;
+        }
+
+        @media (min-width: 768px) {
+            .lyrics-line {
+                font-size: 2rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .lyrics-line {
+                font-size: 2.5rem;
+            }
+        }
+        
+        .lyrics-line.active {
+            font-weight: 700;
+            color: #a5b4fc;
+            opacity: 1;
+        }
+
+        body.full-screen {
+            overflow: hidden;
+            background-color: black;
+        }
+
+        body.full-screen .control-panel,
+        body.full-screen #hymn-title,
+        body.full-screen #lyrics-scroll-container,
+        body.full-screen #welcome-message {
+            display: none !important;
+        }
+
+        body.full-screen #lyrics-display {
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        body.full-screen #single-line-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+            padding: 0 2rem;
+        }
+        
+        #single-line-text {
+            font-size: min(15vw, 15vh);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            line-height: 1.2;
+            padding: 0 2rem;
+            white-space: pre-wrap;
+            
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        #single-line-text.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .lyrics-scroll-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .lyrics-scroll-container::-webkit-scrollbar {
+            width: 10px;
+        }
+        .lyrics-scroll-container::-webkit-scrollbar-track {
+            background: #2d3748;
+            border-radius: 5px;
+        }
+        .lyrics-scroll-container::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 5px;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #1e293b;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            max-height: 90vh;
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .all-hymns-modal .modal-content {
+            width: 90%;
+            max-width: 2xl;
+        }
+        .all-hymns-modal-list {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .fullscreen-nav-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 110;
+            pointer-events: none;
+            display: none;
+        }
+        
+        body.full-screen .fullscreen-nav-container {
+            display: block;
+        }
+
+        .fullscreen-btn {
+            position: fixed;
+            top: 0;
+            width: 25vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            
+            opacity: 0.1; 
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .fullscreen-btn:hover, .fullscreen-btn:active, .fullscreen-btn:focus {
+            opacity: 0.5;
+        }
+        
+        .fullscreen-btn.left {
+            left: 0;
+        }
+        
+        .fullscreen-btn.right {
+            right: 0;
+        }
+        
+        .fullscreen-btn.exit-btn {
+            top: 2rem;
+            right: 2rem;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 9999px;
+            background-color: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            
+            opacity: 0.1;
+        }
+        
+        .fullscreen-btn.exit-btn:hover, .fullscreen-btn.exit-btn:active {
+            opacity: 0.5;
+            background-color: rgba(55, 65, 81, 0.7);
+        }
+        
+        .fullscreen-btn svg {
+            color: #d1d5db;
+            height: 3rem;
+            width: 3rem;
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+        }
+    </style>
+</head>
+<body class="bg-primary-bg">
+
+    <div id="app-container" class="min-h-screen flex flex-col">
+
+        <div id="control-panel" class="control-panel bg-secondary-bg p-4 border-b border-gray-700 flex flex-col md:flex-row items-center justify-between transition-all duration-500 relative z-10">
+            
+            <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-0">Dijital İlahi Kitabı</h1>
+
+            <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 w-full md:w-auto">
+                
+                <div class="flex items-center space-x-2 w-full">
+                    <div class="relative w-full">
+                        <input type="text" id="search-bar" placeholder="İlahi ara..." class="w-full p-2 pr-10 rounded-md bg-primary-bg text-text-light border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-blue">
+                        <button id="clear-search-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 focus:outline-none" style="display:none;">
+                            <svg class="h-5 w-5 text-text-subtle hover:text-text-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div id="suggestions-container" class="absolute left-0 right-0 mt-1 bg-secondary-bg rounded-md shadow-lg hidden max-h-60 overflow-y-auto z-20">
+                        </div>
+                    </div>
+                    
+                    <button id="show-all-hymns-btn" class="w-full md:w-auto bg-gray-700 active:bg-gray-600 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                        Tüm İlahilere Göz At
+                    </button>
+                </div>
+
+            </div>
+
+            <button id="display-on-tv-btn" onclick="toggleFullscreenDisplay()" class="bg-highlight-blue text-primary-bg font-bold py-2 px-4 rounded-lg shadow-lg mt-4 md:mt-0 transition-colors">
+                Tam Ekrana Geç
+            </button>
+        </div>
+
+        <div id="lyrics-display" class="lyrics-display p-8 flex-grow flex flex-col items-center justify-center text-center transition-all duration-500">
+            
+            <div id="welcome-message" class="text-xl md:text-2xl text-text-subtle font-light max-w-2xl text-center">
+                <p class="mb-4">Dijital İlahi Kitabı'na hoş geldiniz.</p>
+                <p>Yukarıdaki arama çubuğunu kullanarak bir ilahi bulabilir veya "Tüm İlahilere Göz At" butonuna tıklayarak tam listeye ulaşabilirsiniz. Klavyenizdeki **sol** ve **sağ** ok tuşlarını kullanarak dizeleri ilerletebilir veya herhangi bir dizeye **tıklayarak** doğrudan o dizeye atlayabilirsiniz.</p>
+            </div>
+            
+            <div id="hymn-content" class="hidden flex-grow w-full h-full flex flex-col justify-center items-center">
+                <h2 id="hymn-title" class="text-3xl md:text-4xl lg:text-5xl font-bold mb-8 text-highlight-blue"></h2>
+                
+                <div id="lyrics-scroll-container" class="space-y-4 md:space-y-6 lg:space-y-8 w-full max-w-4xl text-center">
+                </div>
+
+                <div id="single-line-display" class="hidden">
+                    <p id="single-line-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="casting-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold mb-4" id="modal-title"></h3>
+            <p class="text-lg mb-6" id="modal-message"></p>
+            <button onclick="closeModal('casting-modal')" class="bg-highlight-blue text-primary-bg font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                Anladım!
+            </button>
+        </div>
+    </div>
+
+    <div id="all-hymns-modal" class="modal-overlay all-hymns-modal">
+        <div class="modal-content w-full max-w-2xl mx-auto flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h2 class="text-2xl font-bold">Tüm İlahiler</h2>
+                <button onclick="closeModal('all-hymns-modal')" class="text-text-subtle hover:text-text-light transition-colors">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4">
+                <input type="text" id="modal-search-bar" placeholder="Listede ara..." class="w-full p-2 rounded-md bg-primary-bg text-text-light border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-blue">
+            </div>
+            <div id="hymns-list" class="all-hymns-modal-list p-4 space-y-2">
+            </div>
+        </div>
+    </div>
+
+    <div class="fullscreen-nav-container">
+        <button onclick="previousLine()" class="fullscreen-btn left">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        <button onclick="nextLine()" class="fullscreen-btn right">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+        <button onclick="exitFullscreenMode()" class="fullscreen-btn exit-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const hymns = [
+            {
+                title: "Kutsalsın Tanrım",
+                lyrics: [
+                    "Kutsalsın Tanrım, ne büyük bir lütuf,",
+                    "Yüce varlığınla dolusun sen.",
+                    "Yaratılışın seni anlatıyor,",
+                    "Şarkımız da seni övüyor."
+                ]
+            },
+            {
+                title: "Tanrı Sevgisi",
+                lyrics: [
+                    "Sonsuz sevgin, eşsiz bir armağan,",
+                    "Her gün yeniden doğar, parlar.",
+                    "Günahlarımı sildi, beni özgür kıldı,",
+                    "Tanrı'nın sevgisiyle doldu yüreğim."
+                ]
+            },
+            {
+                title: "İsa'ya Şükürler Olsun",
+                lyrics: [
+                    "İsa'ya şükürler olsun, O'nun adını yüceltin,",
+                    "Çarmıhta canını verdi, bizi kurtardı.",
+                    "Ölümün gücünü kırdı, dirildi yeniden,",
+                    "O'na iman edenler, sonsuz yaşama kavuşur."
+                ]
+            },
+            {
+                title: "Yüce Rabbim, Ne Yücesin Sen",
+                lyrics: [
+                    "Yüce Rabbim, Ne Yücesin Sen,",
+                    "Evrende her şey Sen'in eserindir.",
+                    "Gökyüzünde ışıldayan yıldızlar,",
+                    "Gök gürültüsü, heybetli sesindir.",
+                    "Yüreğim sana hayranlıkla dolu:",
+                    "Yüce Rabbim, ne yücesin Sen!",
+                    "O ormanlar ve vadilerde gezinince,",
+                    "Kuşların ötüşü kulağımı çınlatınca,",
+                    "Yemyeşil tepelerden akınca sular,",
+                    "Görünce doğanın tüm harikalarını,",
+                    "Yüreğim sana hayranlıkla dolu:",
+                    "Yüce Rabbim, ne yücesin Sen!",
+                    "Sonra düşününce Tanrı'nın Oğlu'nu,",
+                    "Gönderdi bizi kurtarmak için dünyaya,",
+                    "Çarmıhta çekti tüm günahların yükünü,",
+                    "Öldü, yeniden dirildi bizim için,",
+                    "Yüreğim sana hayranlıkla dolu:",
+                    "Yüce Rabbim, ne yücesin Sen!",
+                    "O'nun döneceği gün yaklaşıyor,",
+                    "Davet edince gel diye O'nu,",
+                    "Neşe içinde diz çökeceğim önünde,",
+                    "Şükürle diyeceğim: Ne Yücesin Sen!",
+                    "Yüreğim sana hayranlıkla dolu:",
+                    "Yüce Rabbim, ne yücesin Sen!"
+                ]
+            }
+        ];
+
+        let currentHymnIndex = -1;
+        let currentLineIndex = 0;
+        let isFullScreen = false;
+
+        const searchBar = document.getElementById('search-bar');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const hymnTitleElement = document.getElementById('hymn-title');
+        const lyricsScrollContainer = document.getElementById('lyrics-scroll-container');
+        const singleLineDisplay = document.getElementById('single-line-display');
+        const singleLineText = document.getElementById('single-line-text');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const hymnContent = document.getElementById('hymn-content');
+        const displayOnTvBtn = document.getElementById('display-on-tv-btn');
+        const castingModal = document.getElementById('casting-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const showAllHymnsBtn = document.getElementById('show-all-hymns-btn');
+        const allHymnsModal = document.getElementById('all-hymns-modal');
+        const modalSearchBar = document.getElementById('modal-search-bar');
+        const hymnsListContainer = document.getElementById('hymns-list');
+
+        function renderSuggestions(hymnList) {
+            suggestionsContainer.innerHTML = '';
+            if (hymnList.length > 0) {
+                hymnList.forEach(hymn => {
+                    const originalIndex = hymns.findIndex(h => h.title === hymn.title);
+                    const suggestionDiv = document.createElement('div');
+                    suggestionDiv.textContent = hymn.title;
+                    suggestionDiv.classList.add('p-2', 'rounded-md', 'cursor-pointer', 'hover:bg-primary-bg', 'transition-colors');
+                    suggestionDiv.addEventListener('click', () => {
+                        selectHymn(originalIndex);
+                        suggestionsContainer.classList.add('hidden');
+                        searchBar.value = '';
+                        clearSearchBtn.style.display = 'none';
+                    });
+                    suggestionsContainer.appendChild(suggestionDiv);
+                });
+                suggestionsContainer.classList.remove('hidden');
+            } else {
+                suggestionsContainer.classList.add('hidden');
+            }
+        }
+
+        function selectHymn(index) {
+            currentHymnIndex = index;
+            renderHymn();
+            resetLyrics();
+            closeModal('all-hymns-modal');
+        }
+
+        function renderHymn() {
+            if (currentHymnIndex === -1) return;
+            const hymn = hymns[currentHymnIndex];
+            hymnTitleElement.textContent = hymn.title;
+            lyricsScrollContainer.innerHTML = '';
+            
+            welcomeMessage.classList.add('hidden');
+            hymnContent.classList.remove('hidden');
+
+            hymn.lyrics.forEach((line, index) => {
+                const p = document.createElement('p');
+                p.textContent = line;
+                p.classList.add('lyrics-line');
+                p.dataset.index = index;
+                p.addEventListener('click', () => {
+                    currentLineIndex = index;
+                    updateLyrics();
+                });
+                lyricsScrollContainer.appendChild(p);
+            });
+        }
+
+        function handleSearch() {
+            const query = searchBar.value.toLowerCase();
+            if (query.length > 0) {
+                clearSearchBtn.style.display = 'flex';
+                const filteredHymns = hymns.filter(hymn =>
+                    hymn.title.toLowerCase().includes(query)
+                );
+                renderSuggestions(filteredHymns);
+            } else {
+                clearSearchBtn.style.display = 'none';
+                suggestionsContainer.classList.add('hidden');
+            }
+        }
+
+        function clearSearch() {
+            searchBar.value = '';
+            handleSearch();
+        }
+
+        function renderAllHymnsList(hymnList) {
+            hymnsListContainer.innerHTML = '';
+            hymnList.forEach((hymn, index) => {
+                const listItem = document.createElement('div');
+                listItem.textContent = hymn.title;
+                listItem.classList.add('p-3', 'rounded-md', 'cursor-pointer', 'text-lg', 'hover:bg-primary-bg', 'transition-colors');
+                listItem.addEventListener('click', () => {
+                    const originalIndex = hymns.findIndex(h => h.title === hymn.title);
+                    selectHymn(originalIndex);
+                });
+                hymnsListContainer.appendChild(listItem);
+            });
+        }
+
+        function openAllHymnsModal(e) {
+            e.stopPropagation(); // Genel tıklama olay dinleyicisinin tetiklenmesini engeller.
+            openModal('all-hymns-modal');
+            modalSearchBar.value = '';
+            renderAllHymnsList(hymns);
+        }
+
+        function filterHymnsList() {
+            const query = modalSearchBar.value.toLowerCase();
+            const filteredHymns = hymns.filter(hymn =>
+                hymn.title.toLowerCase().includes(query)
+            );
+            renderAllHymnsList(filteredHymns);
+        }
+
+        function updateLyrics() {
+            if (currentHymnIndex === -1) return;
+            const hymn = hymns[currentHymnIndex];
+            
+            if (isFullScreen) {
+                singleLineText.classList.remove('visible');
+                setTimeout(() => {
+                    singleLineText.textContent = hymn.lyrics[currentLineIndex];
+                    singleLineText.classList.add('visible');
+                }, 150);
+            } else {
+                const lines = document.querySelectorAll('.lyrics-line');
+                lines.forEach((line, index) => {
+                    if (index === currentLineIndex) {
+                        line.classList.add('active');
+                        line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        line.classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        function resetLyrics() {
+            currentLineIndex = 0;
+            updateLyrics();
+        }
+
+        function nextLine() {
+            if (currentHymnIndex !== -1 && currentLineIndex < hymns[currentHymnIndex].lyrics.length - 1) {
+                currentLineIndex++;
+                updateLyrics();
+            }
+        }
+
+        function previousLine() {
+            if (currentHymnIndex !== -1 && currentLineIndex > 0) {
+                currentLineIndex--;
+                updateLyrics();
+            }
+        }
+
+        function enterFullscreenMode() {
+            isFullScreen = true;
+            document.body.classList.add('full-screen');
+            displayOnTvBtn.textContent = 'Ekranı Kapat';
+            displayOnTvBtn.classList.remove('bg-highlight-blue');
+            displayOnTvBtn.classList.add('bg-highlight-red');
+            
+            modalTitle.textContent = "Ekranı Yansıt";
+            modalMessage.innerHTML = "Bu ekranı TV'nize yansıtmak için lütfen tarayıcınızın kendi yansıtma aracını kullanın (örneğin, Chrome'da 'Yayınla' butonu).";
+            openModal('casting-modal');
+            
+            singleLineDisplay.classList.remove('hidden');
+            updateLyrics();
+            
+            if(!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Tam ekrana geçiş hatası: ${err.message} (${err.name})`);
+                });
+            }
+        }
+
+        function exitFullscreenMode() {
+            isFullScreen = false;
+            singleLineText.classList.remove('visible');
+            
+            setTimeout(() => {
+                document.body.classList.remove('full-screen');
+                displayOnTvBtn.textContent = 'Tam Ekrana Geç';
+                displayOnTvBtn.classList.remove('bg-highlight-red');
+                displayOnTvBtn.classList.add('bg-highlight-blue');
+                
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+                
+                closeModal('casting-modal');
+                singleLineDisplay.classList.add('hidden');
+                updateLyrics();
+            }, 150);
+        }
+
+        function toggleFullscreenDisplay() {
+            if (currentHymnIndex === -1) {
+                modalTitle.textContent = "Uyarı!";
+                modalMessage.innerHTML = "Lütfen tam ekran moduna geçmeden önce bir ilahi seçin.";
+                openModal('casting-modal');
+                return;
+            }
+            
+            if (!isFullScreen) {
+                enterFullscreenMode();
+            } else {
+                exitFullscreenMode();
+            }
+        }
+        
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('visible');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('visible');
+        }
+        
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isFullScreen) {
+                exitFullscreenMode();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (currentHymnIndex !== -1) {
+                if (e.key === "ArrowRight") {
+                    e.preventDefault();
+                    nextLine();
+                } else if (e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    previousLine();
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const isClickInsideSearchBar = searchBar.contains(e.target) || suggestionsContainer.contains(e.target) || clearSearchBtn.contains(e.target);
+            const isClickInsideAllHymnsModal = allHymnsModal.contains(e.target);
+
+            if (!isClickInsideSearchBar) {
+                suggestionsContainer.classList.add('hidden');
+            }
+            // All-hymns modal'ı, butona tıklayarak açıldığı için, bu kontrol sadece modalın dışına tıklanıldığında kapanmasını sağlar.
+            if (!isClickInsideAllHymnsModal && !showAllHymnsBtn.contains(e.target)) {
+                 closeModal('all-hymns-modal');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            searchBar.addEventListener('input', handleSearch);
+            clearSearchBtn.addEventListener('click', clearSearch);
+            showAllHymnsBtn.addEventListener('click', openAllHymnsModal);
+            modalSearchBar.addEventListener('input', filterHymnsList);
+        });
+    </script>
+</body>
+</html>

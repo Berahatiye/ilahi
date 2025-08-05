@@ -268,9 +268,12 @@
                 </div>
 
             </div>
-
+            
+            <button id="initial-fullscreen-btn" onclick="toggleInitialPageFullscreen()" class="bg-highlight-blue text-primary-bg font-bold py-2 px-4 rounded-lg shadow-lg mt-4 md:mt-0 transition-colors mr-4">
+                Ana Ekranı Tam Yap
+            </button>
             <button id="display-on-tv-btn" onclick="toggleFullscreenDisplay()" class="bg-highlight-blue text-primary-bg font-bold py-2 px-4 rounded-lg shadow-lg mt-4 md:mt-0 transition-colors">
-                Tam Ekrana Geç
+                İlahiyi Yansıt
             </button>
         </div>
 
@@ -645,6 +648,17 @@
                 enterFullscreenMode();
             } else {
                 exitFullscreenMode();
+            }
+        }
+
+        // Yeni eklenen fonksiyon
+        function toggleInitialPageFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Tam ekrana geçiş hatası: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
             }
         }
         

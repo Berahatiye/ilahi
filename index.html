@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dijital İlahi Kitabı</title>
+    <title>İlahi Prompter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -34,10 +34,17 @@
             transition: background-color 0.5s ease-in-out;
             margin: 0;
             padding: 0;
+            
+            /* Disable text selection */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE10+/Edge */
+            user-select: none; /* Standard */
+            -webkit-touch-callout: none; /* iOS Safari */
         }
 
         .lyrics-line {
-            font-size: 1.5rem;
+            font-size: 1.75rem; /* Slightly larger base font size */
             font-weight: 500;
             color: #94a3b8;
             opacity: 0.7;
@@ -46,15 +53,26 @@
             cursor: pointer;
         }
 
+        /* Adjust font size for smaller screens to prevent wrapping */
+        @media (max-width: 480px) {
+            .lyrics-line {
+                font-size: 1.5rem;
+            }
+            #hymns-list > div {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+        }
+
         @media (min-width: 768px) {
             .lyrics-line {
-                font-size: 2rem;
+                font-size: 2.25rem; /* Larger font size for tablets */
             }
         }
         
         @media (min-width: 1024px) {
             .lyrics-line {
-                font-size: 2.5rem;
+                font-size: 3rem; /* Larger font size for desktops */
             }
         }
         
@@ -148,9 +166,10 @@
             opacity: 1;
             visibility: visible;
         }
+
         .modal-content {
             background-color: #1e293b;
-            padding: 2rem;
+            padding: 1rem;
             border-radius: 0.75rem;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
             max-width: 90%;
@@ -159,6 +178,13 @@
             transform: scale(0.95);
             transition: transform 0.3s ease-in-out;
         }
+        
+        @media (min-width: 640px) {
+            .modal-content {
+                padding: 2rem;
+            }
+        }
+        
         .modal-overlay.visible .modal-content {
             transform: scale(1);
         }
@@ -166,9 +192,11 @@
         .all-hymns-modal .modal-content {
             width: 90%;
             max-width: 2xl;
+            max-height: 85vh;
         }
+
         .all-hymns-modal-list {
-            max-height: 60vh;
+            max-height: 70vh;
             overflow-y: auto;
         }
 
@@ -190,7 +218,6 @@
         .fullscreen-btn {
             position: fixed;
             top: 0;
-            width: 25vw;
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -201,7 +228,8 @@
             transition: opacity 0.3s ease-in-out;
         }
         
-        .fullscreen-btn:hover, .fullscreen-btn:active, .fullscreen-btn:focus {
+        /* Removed hover, kept active and focus for touch/tap feedback */
+        .fullscreen-btn:active, .fullscreen-btn:focus {
             opacity: 0.5;
         }
         
@@ -214,10 +242,10 @@
         }
         
         .fullscreen-btn.exit-btn {
-            top: 2rem;
-            right: 2rem;
-            width: 4rem;
-            height: 4rem;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 3rem;
+            height: 3rem;
             border-radius: 9999px;
             background-color: rgba(30, 41, 59, 0.5);
             backdrop-filter: blur(5px);
@@ -227,16 +255,30 @@
             opacity: 0.1;
         }
         
-        .fullscreen-btn.exit-btn:hover, .fullscreen-btn.exit-btn:active {
+        /* Removed hover, kept active for touch/tap feedback */
+        .fullscreen-btn.exit-btn:active {
             opacity: 0.5;
             background-color: rgba(55, 65, 81, 0.7);
         }
         
         .fullscreen-btn svg {
             color: #d1d5db;
-            height: 3rem;
-            width: 3rem;
+            height: 2rem;
+            width: 2rem;
             filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+        }
+
+        @media (min-width: 768px) {
+            .fullscreen-btn.exit-btn {
+                top: 2rem;
+                right: 2rem;
+                width: 4rem;
+                height: 4rem;
+            }
+            .fullscreen-btn svg {
+                height: 3rem;
+                width: 3rem;
+            }
         }
     </style>
 </head>
@@ -246,7 +288,7 @@
 
         <div id="control-panel" class="control-panel bg-secondary-bg p-4 border-b border-gray-700 flex flex-col md:flex-row items-center justify-between transition-all duration-500 relative z-10">
             
-            <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-0">Dijital İlahi Kitabı</h1>
+            <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-0">İlahi Prompter</h1>
 
             <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 w-full md:w-auto">
                 
@@ -254,7 +296,7 @@
                     <div class="relative w-full">
                         <input type="text" id="search-bar" placeholder="İlahi ara..." class="w-full p-2 pr-10 rounded-md bg-primary-bg text-text-light border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-blue">
                         <button id="clear-search-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 focus:outline-none" style="display:none;">
-                            <svg class="h-5 w-5 text-text-subtle hover:text-text-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <svg class="h-5 w-5 text-text-subtle active:text-text-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                             </svg>
                         </button>
@@ -311,7 +353,7 @@
         <div class="modal-content w-full max-w-2xl mx-auto flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-gray-700">
                 <h2 class="text-2xl font-bold">Tüm İlahiler</h2>
-                <button onclick="closeModal('all-hymns-modal')" class="text-text-subtle hover:text-text-light transition-colors">
+                <button onclick="closeModal('all-hymns-modal')" class="text-text-subtle active:text-text-light transition-colors">
                     <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -320,7 +362,7 @@
             <div class="p-4">
                 <input type="text" id="modal-search-bar" placeholder="Listede ara..." class="w-full p-2 rounded-md bg-primary-bg text-text-light border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-blue">
             </div>
-            <div id="hymns-list" class="all-hymns-modal-list p-4 space-y-2">
+            <div id="hymns-list" class="all-hymns-modal-list p-2 space-y-2">
             </div>
         </div>
     </div>
@@ -446,6 +488,7 @@
         const welcomeMessage = document.getElementById('welcome-message');
         const hymnContent = document.getElementById('hymn-content');
         const displayOnTvBtn = document.getElementById('display-on-tv-btn');
+        const initialFullscreenBtn = document.getElementById('initial-fullscreen-btn');
         const castingModal = document.getElementById('casting-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
@@ -461,7 +504,8 @@
                     const originalIndex = hymns.findIndex(h => h.title === hymn.title);
                     const suggestionDiv = document.createElement('div');
                     suggestionDiv.textContent = hymn.title;
-                    suggestionDiv.classList.add('p-2', 'rounded-md', 'cursor-pointer', 'hover:bg-primary-bg', 'transition-colors');
+                    // Removed hover class, added active for tap feedback
+                    suggestionDiv.classList.add('p-2', 'rounded-md', 'cursor-pointer', 'active:bg-primary-bg', 'transition-colors');
                     suggestionDiv.addEventListener('click', () => {
                         selectHymn(originalIndex);
                         suggestionsContainer.classList.add('hidden');
@@ -526,16 +570,24 @@
 
         function renderAllHymnsList(hymnList) {
             hymnsListContainer.innerHTML = '';
-            hymnList.forEach((hymn, index) => {
-                const listItem = document.createElement('div');
-                listItem.textContent = hymn.title;
-                listItem.classList.add('p-3', 'rounded-md', 'cursor-pointer', 'text-lg', 'hover:bg-primary-bg', 'transition-colors');
-                listItem.addEventListener('click', () => {
-                    const originalIndex = hymns.findIndex(h => h.title === hymn.title);
-                    selectHymn(originalIndex);
+            if (hymnList.length === 0) {
+                const noResultsDiv = document.createElement('div');
+                noResultsDiv.textContent = "Eşleşen ilahi bulunamadı.";
+                noResultsDiv.classList.add('text-text-subtle', 'text-center', 'p-4');
+                hymnsListContainer.appendChild(noResultsDiv);
+            } else {
+                hymnList.forEach((hymn) => {
+                    const listItem = document.createElement('div');
+                    listItem.textContent = hymn.title;
+                    // Removed hover class, added active for tap feedback
+                    listItem.classList.add('p-4', 'rounded-md', 'cursor-pointer', 'text-xl', 'border-b', 'border-gray-700', 'last:border-b-0', 'active:bg-primary-bg', 'transition-colors');
+                    listItem.addEventListener('click', () => {
+                        const originalIndex = hymns.findIndex(h => h.title === hymn.title);
+                        selectHymn(originalIndex);
+                    });
+                    hymnsListContainer.appendChild(listItem);
                 });
-                hymnsListContainer.appendChild(listItem);
-            });
+            }
         }
 
         function openAllHymnsModal(e) {
@@ -594,6 +646,22 @@
                 updateLyrics();
             }
         }
+        
+        function toggleFullscreenDisplay() {
+            // Fix: Added a check to prevent fullscreen if no hymn is selected
+            if (currentHymnIndex === -1) {
+                modalTitle.textContent = "Uyarı";
+                modalMessage.textContent = "İlahiyi yansıtmak için lütfen önce bir ilahi seçin.";
+                openModal('casting-modal');
+                return;
+            }
+
+            if (!isFullScreen) {
+                enterFullscreenMode();
+            } else {
+                exitFullscreenMode();
+            }
+        }
 
         function enterFullscreenMode() {
             isFullScreen = true;
@@ -622,7 +690,7 @@
             
             setTimeout(() => {
                 document.body.classList.remove('full-screen');
-                displayOnTvBtn.textContent = 'Tam Ekrana Geç';
+                displayOnTvBtn.textContent = 'İlahiyi Yansıt';
                 displayOnTvBtn.classList.remove('bg-highlight-red');
                 displayOnTvBtn.classList.add('bg-highlight-blue');
                 
@@ -636,29 +704,18 @@
             }, 150);
         }
 
-        function toggleFullscreenDisplay() {
-            if (currentHymnIndex === -1) {
-                modalTitle.textContent = "Uyarı!";
-                modalMessage.innerHTML = "Lütfen tam ekran moduna geçmeden önce bir ilahi seçin.";
-                openModal('casting-modal');
-                return;
-            }
-            
-            if (!isFullScreen) {
-                enterFullscreenMode();
-            } else {
-                exitFullscreenMode();
-            }
-        }
-
-        // Yeni eklenen fonksiyon
+        // Yeni eklenen ve güncellenen fonksiyon
         function toggleInitialPageFullscreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
+                document.documentElement.requestFullscreen().then(() => {
+                    initialFullscreenBtn.textContent = 'Tam Ekrandan Çık';
+                }).catch(err => {
                     console.error(`Tam ekrana geçiş hatası: ${err.message} (${err.name})`);
                 });
             } else {
-                document.exitFullscreen();
+                document.exitFullscreen().then(() => {
+                    initialFullscreenBtn.textContent = 'Ana Ekranı Tam Yap';
+                });
             }
         }
         
@@ -671,8 +728,22 @@
         }
         
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && isFullScreen) {
-                exitFullscreenMode();
+            if (!document.fullscreenElement) {
+                // If the user exits fullscreen for any reason (e.g., ESC key)
+                initialFullscreenBtn.textContent = 'Ana Ekranı Tam Yap';
+                if (isFullScreen) {
+                    exitFullscreenMode();
+                }
+            } else {
+                // If the page enters fullscreen, update the button text
+                // This handles cases where fullscreen is triggered by another element,
+                // and we want both buttons to reflect the correct state.
+                if (document.fullscreenElement.id === 'lyrics-display') {
+                    // This is not strictly needed for this specific button,
+                    // but it's good practice to keep the state consistent
+                } else if (document.fullscreenElement === document.documentElement) {
+                    initialFullscreenBtn.textContent = 'Tam Ekrandan Çık';
+                }
             }
         });
 
@@ -699,6 +770,10 @@
             if (!isClickInsideAllHymnsModal && !showAllHymnsBtn.contains(e.target)) {
                  closeModal('all-hymns-modal');
             }
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
         });
 
         document.addEventListener('DOMContentLoaded', () => {

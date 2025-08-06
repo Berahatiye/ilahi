@@ -185,16 +185,16 @@
             background-color: black;
         }
 
-        body.full-screen .control-panel,
-        body.full-screen #hymn-title-container,
-        body.full-screen #lyrics-scroll-container,
-        body.full-screen #welcome-message,
-        body.full-screen #lyrics-provider-container
+        body.full-screen.casting-mode .control-panel,
+        body.full-screen.casting-mode #hymn-title-container,
+        body.full-screen.casting-mode #lyrics-scroll-container,
+        body.full-screen.casting-mode #welcome-message,
+        body.full-screen.casting-mode #lyrics-provider-container
         {
             display: none !important;
         }
 
-        body.full-screen #lyrics-display {
+        body.full-screen.casting-mode #lyrics-display {
             padding: 0;
             min-height: 100vh;
             display: flex;
@@ -202,7 +202,7 @@
             justify-content: center;
         }
         
-        body.full-screen #single-line-display {
+        body.full-screen.casting-mode #single-line-display {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -307,11 +307,11 @@
             width: 100%;
             height: 100%;
             z-index: 110;
-            pointer-events: none;
+            /* pointer-events: none; - Removed this line */
             display: none;
         }
         
-        body.full-screen .fullscreen-nav-container {
+        body.full-screen.casting-mode .fullscreen-nav-container {
             display: block;
         }
 
@@ -543,7 +543,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         </button>
-        <button onclick="exitFullscreenMode()" class="fullscreen-btn exit-btn">
+        <button onclick="exitCastingMode()" class="fullscreen-btn exit-btn">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -622,14 +622,6 @@
                     "Ölüm, dikenin nerede?",
                     "Ölüm, zaferin nerede?",
                     "Ölüm, kibirin nerede?",
-                    "Dirildin, dirildin.",
-                    "Allah'ım nasıl oldu?",
-                    "Bu ne güç, bu ne kudret?",
-                    "Yeni bir yaşam verdi",
-                    "Dirildin, dirildin.",
-                    "Ölüm, dikenin nerede?",
-                    "Ölüm, zaferin nerede?",
-                    "Ölüm, kibirin nerede?",
                     "// Dirildin, dirildin. //",
                     "Elçiler yaklaşıp mezara bakyorlar",
                     "Yalnızca sargı bezlerini görüyorlar",
@@ -641,7 +633,7 @@
 
         let currentHymnIndex = -1;
         let currentLineIndex = 0;
-        let isFullScreen = false;
+        let isCastingMode = false;
 
         const searchBar = document.getElementById('search-bar');
         const clearSearchBtn = document.getElementById('clear-search-btn');
@@ -777,7 +769,7 @@
             if (currentHymnIndex === -1) return;
             const hymn = hymns[currentHymnIndex];
             
-            if (isFullScreen) {
+            if (isCastingMode) {
                 singleLineText.classList.remove('visible');
                 setTimeout(() => {
                     singleLineText.textContent = hymn.lyrics[currentLineIndex];
@@ -823,23 +815,24 @@
                 return;
             }
 
-            if (!isFullScreen) {
-                enterFullscreenMode();
+            if (!isCastingMode) {
+                enterCastingMode();
             } else {
-                exitFullscreenMode();
+                exitCastingMode();
             }
         }
 
-        function enterFullscreenMode() {
-            isFullScreen = true;
-            document.body.classList.add('full-screen');
+        function enterCastingMode() {
+            isCastingMode = true;
+            document.body.classList.add('full-screen', 'casting-mode');
             displayOnTvBtn.textContent = 'Ekranı Kapat';
             displayOnTvBtn.classList.remove('bg-highlight-blue');
             displayOnTvBtn.classList.add('bg-highlight-red');
             
-            modalTitle.textContent = "Ekranı Yansıt";
-            modalMessage.innerHTML = "Bu ekranı TV'nize yansıtmak için lütfen tarayıcınızın kendi yansıtma aracını kullanın (örneğin, Chrome'da 'Yayınla' butonu).";
-            openModal('casting-modal');
+            // Removed modal opening for casting mode
+            // modalTitle.textContent = "Ekranı Yansıt";
+            // modalMessage.innerHTML = "Bu ekranı TV'nize yansıtmak için lütfen tarayıcınızın kendi yansıtma aracını kullanın (örneğin, Chrome'da 'Yayınla' butonu).";
+            // openModal('casting-modal');
             
             singleLineDisplay.classList.remove('hidden');
             updateLyrics();
@@ -851,12 +844,12 @@
             }
         }
 
-        function exitFullscreenMode() {
-            isFullScreen = false;
+        function exitCastingMode() {
+            isCastingMode = false;
             singleLineText.classList.remove('visible');
             
             setTimeout(() => {
-                document.body.classList.remove('full-screen');
+                document.body.classList.remove('full-screen', 'casting-mode');
                 displayOnTvBtn.textContent = 'İlahiyi Yansıt';
                 displayOnTvBtn.classList.remove('bg-highlight-red');
                 displayOnTvBtn.classList.add('bg-highlight-blue');
@@ -875,12 +868,26 @@
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().then(() => {
                     initialFullscreenBtn.textContent = 'Tam Ekrandan Çık';
+                    if (currentHymnIndex !== -1) {
+                        welcomeMessage.classList.add('hidden');
+                        hymnContent.classList.remove('hidden');
+                        lyricsProviderContainer.style.display = 'block';
+                        updateLyrics();
+                    }
                 }).catch(err => {
                     console.error(`Tam ekrana geçiş hatası: ${err.message} (${err.name})`);
                 });
             } else {
                 document.exitFullscreen().then(() => {
                     initialFullscreenBtn.textContent = 'Ana Ekranı Tam Yap';
+                    if (currentHymnIndex === -1) {
+                        welcomeMessage.classList.remove('hidden');
+                        hymnContent.classList.add('hidden');
+                    }
+                    if (currentHymnIndex !== -1 && !isCastingMode) {
+                         singleLineDisplay.classList.add('hidden');
+                         updateLyrics();
+                    }
                 });
             }
         }
@@ -898,17 +905,16 @@
         }
 
         document.addEventListener('fullscreenchange', () => {
-            // Check if fullscreen is currently active
             if (!document.fullscreenElement) {
-                // If fullscreen was exited (by ESC or other means), reset the button text
                 initialFullscreenBtn.textContent = 'Ana Ekranı Tam Yap';
-                // If the lyrics casting was active, also exit that mode
-                if (isFullScreen) {
-                    exitFullscreenMode();
+                if (isCastingMode) {
+                    exitCastingMode();
+                }
+                if (currentHymnIndex === -1 && !isCastingMode) {
+                    welcomeMessage.classList.remove('hidden');
+                    hymnContent.classList.add('hidden');
                 }
             } else {
-                // If fullscreen was entered, and it's the main document (not the lyrics display)
-                // Ensure the button text is "Tam Ekrandan Çık"
                 if (document.fullscreenElement === document.documentElement) {
                     initialFullscreenBtn.textContent = 'Tam Ekrandan Çık';
                 }

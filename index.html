@@ -289,7 +289,7 @@
             transform: scale(1);
         }
 
-        .all-hymns-modal .modal-content {
+        .all-hymns-modal .modal-content, .playlist-modal .modal-content {
             width: 90%;
             max-width: 2xl;
             max-height: 85vh;
@@ -458,6 +458,9 @@
                     <button id="show-all-hymns-btn" class="w-full md:w-auto bg-gray-700 active:bg-gray-600 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
                         Tüm İlahilere Göz At
                     </button>
+                    <button id="show-playlist-btn" class="w-full md:w-auto bg-green-600 active:bg-green-500 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                        Playlisti Gör
+                    </button>
                 </div>
 
             </div>
@@ -473,7 +476,7 @@
         <div id="lyrics-display" class="lyrics-display p-8 flex-grow flex flex-col items-center justify-center text-center transition-all duration-500">
             
             <div id="welcome-message" class="text-xl md:text-2xl text-text-subtle font-light max-w-2xl text-center">
-                <p class="mb-4">Toplamda: 2918 adet ilahi bulunmaktadır.</p>
+                <p class="mb-4">Toplamda: <span id="hymn-count">0</span> adet ilahi bulunmaktadır.</p>
                 <p><i>"İlahiyi Yansıt"</i> tuşu, butonlarsa sunumu; <i>"Ana Ekranı Tam Yap"</i> butonu ise kaydırarak sunumu sağlamaktadır.</p>
                 <p style="margin-top: 3.1rem; color: #f56fa1;">Site by Berahatiye © 2025</p>
             </div>
@@ -534,6 +537,35 @@
         </div>
     </div>
 
+    <div id="playlist-modal" class="modal-overlay playlist-modal">
+        <div class="modal-content w-full max-w-2xl mx-auto flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h2 class="2xl font-bold">Oluşturulan Çalma Listesi</h2>
+                <button onclick="closeModal('playlist-modal')" class="text-text-subtle active:text-text-light transition-colors">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="playlist-items-container" class="all-hymns-modal-list p-2 space-y-2 flex-grow">
+            </div>
+            <div class="p-4 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 sm:space-x-4">
+                <div class="relative w-full sm:w-2/3">
+                    <input type="text" id="playlist-share-link" class="w-full p-2 rounded-md bg-primary-bg text-text-light border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-blue" readonly>
+                    <button id="copy-playlist-link-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 focus:outline-none text-text-subtle active:text-text-light">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2h-2.586a1 1 0 00-.707.293l-1.414 1.414A1 1 0 019.879 5H6z" />
+                        </svg>
+                    </button>
+                </div>
+                <button id="generate-share-link-btn" class="w-full sm:w-1/3 bg-highlight-blue active:bg-blue-600 text-primary-bg font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                    Paylaşım Linki Oluştur
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="fullscreen-nav-container">
         <button onclick="previousLine()" class="fullscreen-btn left">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -553,8 +585,8 @@
     </div>
 
     <script>
-const hymns = [
-    {
+        const hymns = [
+   {
         "title": "Senden Başka Kimim Var",
         "lyrics": [
             
@@ -64661,11 +64693,12 @@ const hymns = [
             "Ardımdan koşar"
         ]
     }
-];
+        ];
 
         let currentHymnIndex = -1;
         let currentLineIndex = 0;
         let isCastingMode = false;
+        let userPlaylist = [];
 
         const searchBar = document.getElementById('search-bar');
         const clearSearchBtn = document.getElementById('clear-search-btn');
@@ -64688,34 +64721,25 @@ const hymns = [
         const modalSearchBar = document.getElementById('modal-search-bar');
         const hymnsListContainer = document.getElementById('hymns-list');
         const goToTopBtn = document.getElementById('go-to-top-btn');
+        const hymnCountSpan = document.getElementById('hymn-count');
 
-        /**
-         * Normalizes text for search by converting to lowercase, replacing Turkish specific characters
-         * with their Latin equivalents, and removing all non-alphanumeric characters.
-         * This ensures a user-friendly search that ignores punctuation and diacritics.
-         * @param {string} text The input text to normalize.
-         * @returns {string} The normalized text.
-         */
+        const showPlaylistBtn = document.getElementById('show-playlist-btn');
+        const playlistModal = document.getElementById('playlist-modal');
+        const playlistItemsContainer = document.getElementById('playlist-items-container');
+        const playlistShareLinkInput = document.getElementById('playlist-share-link');
+        const copyPlaylistLinkBtn = document.getElementById('copy-playlist-link-btn');
+        const generateShareLinkBtn = document.getElementById('generate-share-link-btn');
+
         function normalizeText(text) {
-            // Convert to lowercase
             let normalized = text.toLowerCase();
-
-            // Replace Turkish specific characters with their common Latin counterparts
             normalized = normalized.replace(/ç/g, 'c');
             normalized = normalized.replace(/ğ/g, 'g');
-            normalized = normalized.replace(/ı/g, 'i'); // Crucial for 'i' and 'ı' equivalence
+            normalized = normalized.replace(/ı/g, 'i');
             normalized = normalized.replace(/ö/g, 'o');
             normalized = normalized.replace(/ş/g, 's');
             normalized = normalized.replace(/ü/g, 'u');
-            // Handle capitalized Turkish characters that might not be caught by simple toLowerCase()
-            // if the original string was already lowercase for example (though toLowerCase generally handles this)
-            normalized = normalized.replace(/i̇/g, 'i'); // for cases where İ (capital I with dot) is encountered
-
-            // Remove all non-alphanumeric characters (keeping only letters and numbers)
-            // This also handles punctuation marks like apostrophes, dashes, etc.
+            normalized = normalized.replace(/i̇/g, 'i');
             normalized = normalized.replace(/[^a-z0-9]/g, '');
-
-            // Trim leading/trailing whitespace
             return normalized.trim();
         }
 
@@ -64723,7 +64747,6 @@ const hymns = [
             suggestionsContainer.innerHTML = '';
             if (hymnList.length > 0) {
                 hymnList.forEach(hymn => {
-                    // Find the original index using the original title for accurate hymn selection
                     const originalIndex = hymns.findIndex(h => h.title === hymn.title);
                     const suggestionDiv = document.createElement('div');
                     suggestionDiv.textContent = hymn.title;
@@ -64747,6 +64770,7 @@ const hymns = [
             renderHymn();
             resetLyrics();
             closeModal('all-hymns-modal');
+            closeModal('playlist-modal');
         }
 
         function renderHymn() {
@@ -64774,11 +64798,9 @@ const hymns = [
         }
 
         function handleSearch() {
-            // Normalize the search query
             const query = normalizeText(searchBar.value);
-            if (query.length >= 3) { // Only search if query is at least 3 characters long
+            if (query.length >= 3) {
                 clearSearchBtn.style.display = 'flex';
-                // Filter hymns by normalizing their titles before comparison
                 const filteredHymns = hymns.filter(hymn =>
                     normalizeText(hymn.title).includes(query)
                 );
@@ -64804,13 +64826,35 @@ const hymns = [
             } else {
                 hymnList.forEach((hymn) => {
                     const listItem = document.createElement('div');
-                    listItem.textContent = hymn.title;
-                    listItem.classList.add('p-4', 'rounded-md', 'cursor-pointer', 'text-xl', 'border-b', 'border-gray-700', 'last:border-b-0', 'active:bg-primary-bg', 'transition-colors');
-                    listItem.addEventListener('click', () => {
-                        // Find the original index using the original title for accurate hymn selection
+                    listItem.classList.add('p-4', 'rounded-md', 'cursor-pointer', 'text-xl', 'border-b', 'border-gray-700', 'last:border-b-0', 'flex', 'justify-between', 'items-center', 'active:bg-primary-bg', 'transition-colors');
+                    
+                    const hymnTitleSpan = document.createElement('span');
+                    hymnTitleSpan.textContent = hymn.title;
+                    hymnTitleSpan.classList.add('flex-grow', 'mr-4');
+                    hymnTitleSpan.addEventListener('click', () => {
                         const originalIndex = hymns.findIndex(h => h.title === hymn.title);
                         selectHymn(originalIndex);
                     });
+                    listItem.appendChild(hymnTitleSpan);
+
+                    const playlistButton = document.createElement('button');
+                    const isInPlaylist = userPlaylist.includes(hymn.title);
+                    playlistButton.textContent = isInPlaylist ? 'Listeden Çıkar' : 'Playliste Ekle';
+                    playlistButton.classList.add('py-1', 'px-3', 'rounded-md', 'text-sm', 'transition-colors');
+                    if (isInPlaylist) {
+                        playlistButton.classList.add('bg-highlight-red', 'text-primary-bg', 'active:bg-red-600');
+                        playlistButton.onclick = (e) => {
+                            e.stopPropagation();
+                            removeFromPlaylist(hymn.title);
+                        };
+                    } else {
+                        playlistButton.classList.add('bg-highlight-blue', 'text-primary-bg', 'active:bg-blue-600');
+                        playlistButton.onclick = (e) => {
+                            e.stopPropagation();
+                            addToPlaylist(hymn.title);
+                        };
+                    }
+                    listItem.appendChild(playlistButton);
                     hymnsListContainer.appendChild(listItem);
                 });
             }
@@ -64824,9 +64868,7 @@ const hymns = [
         }
 
         function filterHymnsList() {
-            // Normalize the search query for the modal search bar
             const query = normalizeText(modalSearchBar.value);
-            // Filter hymns by normalizing their titles before comparison
             const filteredHymns = hymns.filter(hymn =>
                 normalizeText(hymn.title).includes(query)
             );
@@ -65009,12 +65051,16 @@ const hymns = [
         document.addEventListener('click', (e) => {
             const isClickInsideSearchBar = searchBar.contains(e.target) || suggestionsContainer.contains(e.target) || clearSearchBtn.contains(e.target);
             const isClickInsideAllHymnsModal = allHymnsModal.contains(e.target);
+            const isClickInsidePlaylistModal = playlistModal.contains(e.target);
 
             if (!isClickInsideSearchBar) {
                 suggestionsContainer.classList.add('hidden');
             }
             if (!isClickInsideAllHymnsModal && !showAllHymnsBtn.contains(e.target)) {
                  closeModal('all-hymns-modal');
+            }
+            if (!isClickInsidePlaylistModal && !showPlaylistBtn.contains(e.target)) {
+                closeModal('playlist-modal');
             }
         });
 
@@ -65023,11 +65069,166 @@ const hymns = [
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            hymnCountSpan.textContent = hymns.length;
+
             searchBar.addEventListener('input', handleSearch);
             clearSearchBtn.addEventListener('click', clearSearch);
             showAllHymnsBtn.addEventListener('click', openAllHymnsModal);
             modalSearchBar.addEventListener('input', filterHymnsList);
+
+            showPlaylistBtn.addEventListener('click', openPlaylistModal);
+            generateShareLinkBtn.addEventListener('click', updateUrlWithPlaylist);
+            copyPlaylistLinkBtn.addEventListener('click', copyPlaylistLink);
+
+            loadPlaylist();
         });
+
+        function savePlaylist() {
+            localStorage.setItem('hymnPlaylist', JSON.stringify(userPlaylist));
+            updateUrlWithPlaylist();
+        }
+
+        function loadPlaylist() {
+            const hash = window.location.hash.substring(1);
+            if (hash.startsWith('playlist=')) {
+                const playlistTitles = hash.substring('playlist='.length).split(',').map(decodeURIComponent);
+                userPlaylist = [];
+                playlistTitles.forEach(title => {
+                    const hymn = hymns.find(h => h.title === title);
+                    if (hymn && !userPlaylist.includes(hymn.title)) {
+                        userPlaylist.push(hymn.title);
+                    }
+                });
+                savePlaylist();
+                return;
+            }
+
+            const storedPlaylist = localStorage.getItem('hymnPlaylist');
+            if (storedPlaylist) {
+                userPlaylist = JSON.parse(storedPlaylist);
+            } else {
+                userPlaylist = [];
+            }
+            updateUrlWithPlaylist();
+        }
+
+        function updateUrlWithPlaylist() {
+            const encodedTitles = userPlaylist.map(encodeURIComponent);
+            const currentPathname = window.location.pathname;
+            const basePath = currentPathname.endsWith('/') ? currentPathname : currentPathname + '/';
+            const fullUrl = `${window.location.origin}${basePath}#playlist=${encodedTitles.join(',')}`;
+            
+            if (userPlaylist.length > 0) {
+                playlistShareLinkInput.value = fullUrl;
+                if (window.location.hash !== `#playlist=${encodedTitles.join(',')}`) {
+                    window.location.hash = `playlist=${encodedTitles.join(',')}`;
+                }
+            } else {
+                if (window.location.hash.startsWith('#playlist=')) {
+                    window.location.hash = '';
+                }
+                playlistShareLinkInput.value = '';
+            }
+        }
+
+        function addToPlaylist(hymnTitle) {
+            if (!userPlaylist.includes(hymnTitle)) {
+                userPlaylist.push(hymnTitle);
+                savePlaylist();
+                showNotification(`Playliste eklendi: ${hymnTitle}`, 'bg-highlight-blue');
+            } else {
+                showNotification(`Bu ilahi zaten playlistte: ${hymnTitle}`, 'bg-highlight-red');
+            }
+            if (allHymnsModal.classList.contains('visible')) {
+                filterHymnsList();
+            }
+        }
+
+        function removeFromPlaylist(hymnTitle) {
+            userPlaylist = userPlaylist.filter(title => title !== hymnTitle);
+            savePlaylist();
+            renderPlaylist();
+            showNotification(`Playlistten çıkarıldı: ${hymnTitle}`, 'bg-highlight-red');
+            if (allHymnsModal.classList.contains('visible')) {
+                filterHymnsList();
+            }
+        }
+
+        function renderPlaylist() {
+            playlistItemsContainer.innerHTML = '';
+            if (userPlaylist.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.textContent = "Çalma listeniz boş. 'Tüm İlahilere Göz At' kısmından ilahi ekleyebilirsiniz.";
+                emptyMessage.classList.add('text-text-subtle', 'text-center', 'p-4');
+                playlistItemsContainer.appendChild(emptyMessage);
+                playlistShareLinkInput.value = '';
+                generateShareLinkBtn.classList.remove('bg-highlight-blue', 'active:bg-blue-600');
+                generateShareLinkBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
+            } else {
+                userPlaylist.forEach(hymnTitle => {
+                    const hymn = hymns.find(h => h.title === hymnTitle);
+                    if (!hymn) return;
+
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('p-4', 'rounded-md', 'cursor-pointer', 'text-xl', 'border-b', 'border-gray-700', 'last:border-b-0', 'flex', 'justify-between', 'items-center', 'active:bg-primary-bg', 'transition-colors');
+                    
+                    const hymnLink = document.createElement('span');
+                    hymnLink.textContent = hymn.title;
+                    hymnLink.classList.add('flex-grow', 'mr-4');
+                    hymnLink.addEventListener('click', () => {
+                        const hymnIndex = hymns.findIndex(h => h.title === hymn.title);
+                        if (hymnIndex !== -1) {
+                            selectHymn(hymnIndex);
+                            closeModal('playlist-modal');
+                        }
+                    });
+                    listItem.appendChild(hymnLink);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = 'Kaldır';
+                    removeBtn.classList.add('bg-highlight-red', 'text-primary-bg', 'py-1', 'px-3', 'rounded-md', 'text-sm', 'transition-colors', 'active:bg-red-600');
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeFromPlaylist(hymn.title);
+                    });
+                    listItem.appendChild(removeBtn);
+                    playlistItemsContainer.appendChild(listItem);
+                });
+                generateShareLinkBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                generateShareLinkBtn.classList.add('bg-highlight-blue', 'active:bg-blue-600');
+                updateUrlWithPlaylist();
+            }
+        }
+
+        function openPlaylistModal(e) {
+            e.stopPropagation();
+            openModal('playlist-modal');
+            renderPlaylist();
+        }
+
+        function copyPlaylistLink() {
+            playlistShareLinkInput.select();
+            document.execCommand('copy');
+            showNotification('Link panoya kopyalandı!', 'bg-green-500');
+        }
+
+        function showNotification(message, bgColor) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.classList.add('fixed', 'bottom-4', 'right-4', 'p-3', 'rounded-lg', 'shadow-xl', 'text-white', bgColor, 'z-50', 'transition-all', 'duration-300', 'opacity-0', 'transform', 'translate-y-4');
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.remove('opacity-0', 'translate-y-4');
+                notification.classList.add('opacity-100', 'translate-y-0');
+            }, 10);
+
+            setTimeout(() => {
+                notification.classList.remove('opacity-100', 'translate-y-0');
+                notification.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
     </script>
 </body>
 </html>

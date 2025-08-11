@@ -631,7 +631,7 @@
 
     <script>
         const hymns = [
-
+        
            {
         "title": "Senden Başka Kimim Var",
         "lyrics": [
@@ -64739,7 +64739,7 @@
             "Ardımdan koşar"
         ]
     }
-          
+
         ];
 
         let currentHymnIndex = -1;
@@ -64926,9 +64926,13 @@
 
         function openAllHymnsModal(e) {
             e.stopPropagation();
+            showLoader(); 
             openModal('all-hymns-modal');
             modalSearchBar.value = '';
             renderAllHymnsList(hymns);
+            setTimeout(() => { 
+                hideLoader(); 
+            }, 300); 
         }
 
         function filterHymnsList() {
@@ -65139,6 +65143,8 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            showLoader(); 
+
             hymnCountSpan.textContent = hymns.length;
 
             searchBar.addEventListener('input', handleSearch);
@@ -65147,12 +65153,16 @@
             modalSearchBar.addEventListener('input', filterHymnsList);
 
             showPlaylistBtn.addEventListener('click', openPlaylistModal);
-            generateShareLinkBtn.addEventListener('click', openShortenerService); // Changed function name
+            generateShareLinkBtn.addEventListener('click', openShortenerService);
             copyPlaylistLinkBtn.addEventListener('click', copyPlaylistLink);
             clearPlaylistBtn.addEventListener('click', clearPlaylist);
 
             loadPlaylist();
         });
+
+        window.onload = () => {
+            hideLoader();
+        };
 
         function savePlaylist() {
             localStorage.setItem('hymnPlaylist', JSON.stringify(userPlaylist));
@@ -65214,7 +65224,6 @@
             }
         }
 
-        // Renamed function to be more generic and not tied to "TinyURL"
         function openShortenerService() { 
             if (userPlaylist.length === 0) {
                 showNotification('Çalma listeniz boş, link kısaltılamaz.', 'bg-highlight-red');
@@ -65226,11 +65235,10 @@
             const basePath = currentPathname.endsWith('/') ? currentPathname : currentPathname + '/';
             const longUrl = `${window.location.origin}${basePath}#playlist=${encodedTitles.join(',')}`;
             
-            // Using is.gd which offers a free, no-account shortening service via direct URL
             const shortenerCreator = `https://is.gd/create.php?url=${encodeURIComponent(longUrl)}`;
             
             window.open(shortenerCreator, '_blank');
-            showNotification('Link kısaltma sitesi yeni sekmede açıldı! (is.gd)', 'bg-green-500'); // Updated message
+            showNotification('Link kısaltma sitesi yeni sekmede açıldı! (is.gd)', 'bg-green-500');
 
             updateUrlWithPlaylist();
         }

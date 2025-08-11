@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -718,7 +717,7 @@
     <script>
         const hymns = [
 
-   {
+           {
         "title": "Senden Başka Kimim Var",
         "lyrics": [
             
@@ -65013,12 +65012,12 @@
 
         function openAllHymnsModal(e) {
             e.stopPropagation();
-            showLoader(); 
+            showLoader(); // Show loader immediately
             openModal('all-hymns-modal');
             modalSearchBar.value = '';
             renderAllHymnsList(hymns);
             setTimeout(() => { 
-                hideLoader(); 
+                hideLoader(); // Hide loader after rendering
             }, 300); 
         }
 

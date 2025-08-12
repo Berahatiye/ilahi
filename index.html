@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -27,9 +28,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
-       html{
-        scroll-behavior: smooth;
-       }
+        html {
+            scroll-behavior: smooth;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -51,7 +52,8 @@
             color: #94a3b8;
             opacity: 0.26;
             padding: 0.5rem 0;
-            transition: all 0.15s ease-in-out;
+            transition: color 0.15s ease-in-out, opacity 0.15s ease-in-out, font-weight 0.15s ease-in-out;
+            will-change: color, opacity, font-weight;
             cursor: pointer;
         }
 
@@ -227,6 +229,7 @@
             opacity: 0;
             transform: scale(0.95);
             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            will-change: opacity, transform;
         }
         #single-line-text.visible {
             opacity: 1;
@@ -416,7 +419,7 @@
             opacity: 0.5;
         }
         
-    .fullscreen-btn.left {
+        .fullscreen-btn.left {
             left: 0;
         }
         
@@ -721,12 +724,12 @@
     </div>
 
     <script>
-        
         let hymns = []; 
         let currentHymnIndex = -1;
         let currentLineIndex = 0;
         let isCastingMode = false;
         let userPlaylist = { name: 'Yeni Çalma Listem', hymns: [] }; 
+        let lyricsLineElements = [];
 
         const searchBar = document.getElementById('search-bar');
         const clearSearchBtn = document.getElementById('clear-search-btn');
@@ -761,6 +764,15 @@
         const clearPlaylistBtn = document.getElementById('clear-playlist-btn');
 
         const loaderOverlay = document.getElementById('loader-overlay');
+
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
 
         function showLoader() {
             loaderOverlay.classList.remove('hidden');
@@ -807,14 +819,12 @@
 
         function selectHymn(index) {
             showLoader();
-            setTimeout(() => {
-                currentHymnIndex = index;
-                renderHymn();
-                resetLyrics();
-                closeModal('all-hymns-modal');
-                closeModal('playlist-modal');
-                hideLoader();
-            }, 300);
+            currentHymnIndex = index;
+            renderHymn();
+            resetLyrics();
+            closeModal('all-hymns-modal');
+            closeModal('playlist-modal');
+            hideLoader();
         }
 
         function renderHymn() {
@@ -822,7 +832,8 @@
             const hymn = hymns[currentHymnIndex];
             hymnTitleElement.textContent = hymn.title;
             lyricsScrollContainer.innerHTML = '';
-            
+            lyricsLineElements = [];
+
             welcomeMessage.classList.add('hidden');
             hymnContent.classList.remove('hidden');
 
@@ -836,6 +847,7 @@
                     updateLyrics();
                 });
                 lyricsScrollContainer.appendChild(p);
+                lyricsLineElements.push(p);
             });
 
             lyricsProviderContainer.style.display = 'block';
@@ -844,7 +856,7 @@
         function handleSearch() {
             const query = normalizeText(searchBar.value);
         
-            if (hymns.length > 0 && query.length >= 3) { 
+            if (hymns.length > 0 && query.length >= 3) {
                 clearSearchBtn.style.display = 'flex';
                 const filteredHymns = hymns.filter(hymn =>
                     normalizeText(hymn.title).includes(query)
@@ -886,12 +898,12 @@
                     const playlistButton = document.createElement('button');
                     let isInPlaylist = userPlaylist.hymns.includes(hymn.title); 
                     
-                
+                    // Set initial icon and styling based on whether hymn is in playlist
                     if (isInPlaylist) {
-                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#666666"><path d="M200-440v-80h560v80H200Z"/></svg>';
-                        playlistButton.classList.add('bg-highlight-red', 'text-primary-bg', 'active:bg-red-600');
+                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>'; // Check icon
+                        playlistButton.classList.add('bg-green-600', 'text-primary-bg', 'active:bg-green-500');
                     } else {
-                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#666666"><path d="M520-400h80v-120h120v-80H600v-120h-80v120H400v80h120v120ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"/></svg>';
+                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>'; // Plus icon
                         playlistButton.classList.add('bg-highlight-blue', 'text-primary-bg', 'active:bg-blue-600');
                     }
 
@@ -899,25 +911,21 @@
                     playlistButton.classList.add('py-2', 'px-4', 'rounded-md', 'text-sm', 'transition-colors', 'duration-300', 'flex', 'items-center', 'justify-center');
                     
                     playlistButton.onclick = (e) => {
-                        e.stopPropagation(); 
+                        e.stopPropagation();
                         const title = hymn.title;
 
-                      
                         if (userPlaylist.hymns.includes(title)) {
                             userPlaylist.hymns = userPlaylist.hymns.filter(t => t !== title);
-                       
-                            playlistButton.classList.remove('bg-highlight-red', 'active:bg-red-600');
+                            playlistButton.classList.remove('bg-green-600', 'active:bg-green-500');
                             playlistButton.classList.add('bg-highlight-blue', 'active:bg-blue-600');
-                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#666666"><path d="M520-400h80v-120h120v-80H600v-120h-80v120H400v80h120v120ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"/></svg>';
+                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>'; // Change to Plus icon
                         } else {
                             userPlaylist.hymns.push(title);
-                            
                             playlistButton.classList.remove('bg-highlight-blue', 'active:bg-blue-600');
-                            playlistButton.classList.add('bg-highlight-red', 'active:bg-red-600');
-                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#666666"><path d="M200-440v-80h560v80H200Z"/></svg>';
+                            playlistButton.classList.add('bg-green-600', 'active:bg-green-500');
+                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>'; // Change to Check icon
                         }
-                        savePlaylist(); 
-                        
+                        savePlaylist();
                         
                         if (playlistModal.classList.contains('visible')) {
                             renderPlaylist();
@@ -942,9 +950,7 @@
             openModal('all-hymns-modal');
             modalSearchBar.value = '';
             renderAllHymnsList(hymns);
-            setTimeout(() => { 
-                hideLoader(); 
-            }, 300); 
+            hideLoader();
         }
 
         function filterHymnsList() {
@@ -958,31 +964,40 @@
             renderAllHymnsList(filteredHymns);
         }
 
+        let previouslyActiveLine = null;
+
         function updateLyrics() {
-            if (currentHymnIndex === -1) return;
+            if (currentHymnIndex === -1 || lyricsLineElements.length === 0) return;
             const hymn = hymns[currentHymnIndex];
             
             if (isCastingMode) {
                 singleLineText.classList.remove('visible');
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                     singleLineText.textContent = hymn.lyrics[currentLineIndex];
                     singleLineText.classList.add('visible');
-                }, 150);
-            } else {
-                const lines = document.querySelectorAll('.lyrics-line');
-                lines.forEach((line, index) => {
-                    if (index === currentLineIndex) {
-                        line.classList.add('active');
-                        line.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    } else {
-                        line.classList.remove('active');
-                    }
                 });
+            } else {
+                if (previouslyActiveLine && previouslyActiveLine !== lyricsLineElements[currentLineIndex]) {
+                    previouslyActiveLine.classList.remove('active');
+                }
+
+                const currentLineElement = lyricsLineElements[currentLineIndex];
+                if (currentLineElement) {
+                    if (!currentLineElement.classList.contains('active')) {
+                        currentLineElement.classList.add('active');
+                        currentLineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    previouslyActiveLine = currentLineElement;
+                }
             }
         }
 
         function resetLyrics() {
             currentLineIndex = 0;
+            if (previouslyActiveLine) {
+                previouslyActiveLine.classList.remove('active');
+                previouslyActiveLine = null;
+            }
             updateLyrics();
         }
 
@@ -991,7 +1006,6 @@
                 currentLineIndex++;
                 updateLyrics();
             }
-     
             if (playlistModal.classList.contains('visible')) {
                 renderPlaylist();
             }
@@ -1005,7 +1019,6 @@
                 currentLineIndex--;
                 updateLyrics();
             }
-           
             if (playlistModal.classList.contains('visible')) {
                 renderPlaylist();
             }
@@ -1113,6 +1126,15 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        const debouncedScrollHandler = debounce(() => {
+            const isScrolledToBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 5);
+            if (isScrolledToBottom && document.documentElement.scrollHeight > window.innerHeight) {
+                goToTopBtn.classList.add('visible');
+            } else {
+                goToTopBtn.classList.remove('visible');
+            }
+        }, 100);
+
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement) {
                 initialFullscreenBtn.textContent = 'Ana Ekranı Tam Yap';
@@ -1130,14 +1152,7 @@
             }
         });
 
-        window.addEventListener('scroll', () => {
-            const isScrolledToBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 5);
-            if (isScrolledToBottom && document.documentElement.scrollHeight > window.innerHeight) {
-                goToTopBtn.classList.add('visible');
-            } else {
-                goToTopBtn.classList.remove('visible');
-            }
-        });
+        window.addEventListener('scroll', debouncedScrollHandler);
 
         document.addEventListener('keydown', (e) => {
             if (currentHymnIndex !== -1) {
@@ -1171,22 +1186,18 @@
             e.preventDefault();
         });
 
-      
         async function initializeApp() {
-            showLoader(); 
+            showLoader();
 
             try {
-     
                 const response = await fetch('hymns.json');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 hymns = await response.json(); 
 
-             
                 hymnCountSpan.textContent = hymns.length;
 
-        
                 searchBar.addEventListener('input', handleSearch);
                 clearSearchBtn.addEventListener('click', clearSearch);
                 showAllHymnsBtn.addEventListener('click', openAllHymnsModal);
@@ -1208,18 +1219,17 @@
                 console.error("Hymns verileri yüklenirken bir hata oluştu:", error);
                 modalTitle.textContent = "Hata!";
                 modalMessage.textContent = "İlahi verileri yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.";
-                openModal('casting-modal'); 
+                openModal('casting-modal');
             } finally {
-                hideLoader(); 
+                hideLoader();
             }
         }
 
-        
         document.addEventListener('DOMContentLoaded', initializeApp);
 
         function savePlaylist() {
             localStorage.setItem('hymnPlaylist', JSON.stringify(userPlaylist));
-            updateUrlWithPlaylist(); 
+            updateUrlWithPlaylist();
         }
 
         function loadPlaylist() {
@@ -1239,7 +1249,6 @@
                 userPlaylist.name = playlistNameFromUrl;
                 userPlaylist.hymns = [];
                 playlistTitles.forEach(title => {
-                   
                     const hymn = hymns.find(h => h.title === title);
                     if (hymn && !userPlaylist.hymns.includes(hymn.title)) {
                         userPlaylist.hymns.push(hymn.title);
@@ -1255,13 +1264,12 @@
                 if (parsedPlaylist && parsedPlaylist.hymns) {
                     userPlaylist = parsedPlaylist;
                 } else if (Array.isArray(parsedPlaylist)) {
-                   
                     userPlaylist = { name: 'Eski Çalma Listem', hymns: parsedPlaylist };
                 }
             } else {
                 userPlaylist = { name: 'Yeni Çalma Listem', hymns: [] };
             }
-            updateUrlWithPlaylist(); 
+            updateUrlWithPlaylist();
         }
 
         function updateUrlWithPlaylist() {
@@ -1275,7 +1283,7 @@
                 if (window.location.hash !== `#playlist=${encodedName}|${encodedTitles.join(',')}`) {
                     window.location.hash = `playlist=${encodedName}|${encodedTitles.join(',')}`;
                 }
-                playlistShareLinkInput.value = fullUrl; 
+                playlistShareLinkInput.value = fullUrl;
                 generateShareLinkBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
                 generateShareLinkBtn.classList.add('bg-highlight-blue', 'active:bg-blue-600');
                 generateShareLinkBtn.disabled = false;
@@ -1330,14 +1338,12 @@
                 userPlaylist.hymns.push(hymnTitle);
                 savePlaylist();
             }
-
         }
 
         function removeFromPlaylist(hymnTitle) {
             userPlaylist.hymns = userPlaylist.hymns.filter(title => title !== hymnTitle);
             savePlaylist();
             renderPlaylist();
-
         }
 
         function renderPlaylist() {
@@ -1359,7 +1365,7 @@
             } else {
                 userPlaylist.hymns.forEach(hymnTitle => {
                     const hymn = hymns.find(h => h.title === hymnTitle);
-                    if (!hymn) return; 
+                    if (!hymn) return;
 
                     const listItem = document.createElement('div');
                     listItem.classList.add('p-2', 'sm:p-3', 'rounded-md', 'cursor-pointer', 'text-base', 'sm:text-lg', 'border-b', 'border-gray-700', 'last:border-b-0', 'flex', 'justify-between', 'items-center', 'active:bg-primary-bg', 'transition-colors');
@@ -1377,7 +1383,7 @@
                     listItem.appendChild(hymnLink);
 
                     const removeBtn = document.createElement('button');
-                    removeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#666666"><path d="M200-440v-80h560v80H200Z"/></svg>';
+                    removeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6" /></svg>'; // Minus icon
                    
                     removeBtn.classList.add('bg-highlight-red', 'text-primary-bg', 'py-2', 'px-3', 'rounded-md', 'text-sm', 'transition-colors', 'active:bg-red-600', 'duration-300', 'flex', 'items-center', 'justify-center');
                     removeBtn.addEventListener('click', (e) => {
@@ -1386,7 +1392,7 @@
                         const titleToRemove = hymn.title;
                         userPlaylist.hymns = userPlaylist.hymns.filter(title => title !== titleToRemove);
                         savePlaylist();
-                        renderPlaylist(); 
+                        renderPlaylist();
                         if (allHymnsModal.classList.contains('visible')) {
                             filterHymnsList(); 
                         }
@@ -1399,9 +1405,9 @@
                 generateShareLinkBtn.classList.add('bg-highlight-blue', 'active:bg-blue-600');
                 generateShareLinkBtn.disabled = false; 
                 clearPlaylistBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
-                clearPlaylistBtn.classList.add('bg-highlight-red', 'active:bg-red-600');
+                clearPlaylistBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
                 clearPlaylistBtn.disabled = false;
-                updateUrlWithPlaylist(); 
+                updateUrlWithPlaylist();
             }
         }
 
@@ -1413,7 +1419,7 @@
 
         function copyPlaylistLink() {
             playlistShareLinkInput.select();
-            document.execCommand('copy');
+            document.execCommand('copy'); 
         }
 
         function showNotification(message, bgColor) {

@@ -1,6 +1,4 @@
-
-
-
+﻿
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -820,12 +818,16 @@ pointer-events: auto;
 
         function selectHymn(index) {
             showLoader();
-            currentHymnIndex = index;
-            renderHymn();
-            resetLyrics();
-            closeModal('all-hymns-modal');
-            closeModal('playlist-modal');
-            hideLoader();
+            
+            // Use setTimeout to allow the loader to render before processing.
+            setTimeout(() => {
+                currentHymnIndex = index;
+                renderHymn();
+                resetLyrics();
+                closeModal('all-hymns-modal');
+                closeModal('playlist-modal');
+                hideLoader();
+            }, 50);
         }
 
         function renderHymn() {
@@ -950,8 +952,12 @@ pointer-events: auto;
             showLoader(); 
             openModal('all-hymns-modal');
             modalSearchBar.value = '';
-            renderAllHymnsList(hymns);
-            hideLoader();
+            
+            // Defer the rendering to ensure the loader is displayed first for large datasets.
+            setTimeout(() => {
+                renderAllHymnsList(hymns);
+                hideLoader();
+            }, 50);
         }
 
         function filterHymnsList() {

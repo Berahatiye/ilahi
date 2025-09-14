@@ -1,4 +1,3 @@
-﻿
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -19,7 +18,8 @@
                         'text-light': '#f8fafc',
                         'text-subtle': '#94a3b8',
                         'highlight-blue': '#a5b4fc',
-                        'highlight-red': '#f87171'
+                        'highlight-red': '#f87171',
+                        'highlight-green': '#4ade80'
                     }
                 }
             }
@@ -254,25 +254,25 @@
         }
         
         .modal-overlay {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background-color: rgba(0, 0, 0, 0.75);
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 100;
-opacity: 0;
-visibility: hidden;
-pointer-events: none;
-}
-.modal-overlay.visible {
-opacity: 1;
-visibility: visible;
-pointer-events: auto;
-}
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
 
         .modal-content {
             background-color: #1e293b;
@@ -552,6 +552,28 @@ pointer-events: auto;
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* NEW Guitar Tuner Styles */
+        #tuner-mode-selector button {
+            transition: all 0.2s ease-in-out;
+        }
+        #tuner-mode-selector button.active {
+            background-color: #a5b4fc;
+            color: #0f172a;
+        }
+        #start-tuner-btn.active {
+            background-color: #f87171;
+            color: white;
+        }
+        #tuner-needle {
+            transform-origin: bottom center;
+            transition: transform 0.1s linear; /* Fast, responsive feel */
+        }
+        .note-in-tune {
+            color: #4ade80 !important; /* highlight-green */
+            text-shadow: 0 0 20px #4ade80;
+        }
+
     </style>
 </head>
 <body class="bg-primary-bg">
@@ -588,6 +610,9 @@ pointer-events: auto;
                     <button id="show-playlist-btn" class="w-full md:w-auto bg-green-600 active:bg-green-500 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
                         PLAYLIST
                     </button>
+                    <button id="guitar-tuner-btn" class="w-full md:w-auto bg-purple-600 active:bg-purple-500 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
+                        Gitar Akort
+                    </button>
                 </div>
 
             </div>
@@ -606,7 +631,7 @@ pointer-events: auto;
             
             <div id="welcome-message" class="text-xl md:text-2xl text-text-subtle font-light max-w-2xl text-center">
                 <p class="mb-4">Toplamda: <span id="hymn-count">0</span> adet Türkçe ilahi <br>bulunmaktadır.</p>
-                <p><i>"İlahiyi Yansıt"</i> tuşu, butonlarla sunumu; <br><i>"Ana Ekranı Tam Yap"</i> tuşu ise "Full Screen" moda geçerek kaydırarak sunumu <br>sağlamaktadır.</p>
+                <p style="font-size: 15px;"><i>"İlahiyi Yansıt"</i> tuşu, butonlarla sunumu; <br><i>"Ana Ekranı Tam Yap"</i> tuşu ise "Full Screen" moda geçerek kaydırarak daha estetik bir sunumu <br>sağlamaktadır. <br> 15/09/2025 ile bu uygulama hâlâ geliştirme aşamasındadır ve kullanıma açıktır.</p>
                 <p style="margin-top: 3.1rem; color: #f56fa1; font-size: 12px;">Site by Berahatiye © 2025</p>
             </div>
             
@@ -704,6 +729,60 @@ pointer-events: auto;
         </div>
     </div>
 
+    <!-- NEW Guitar Tuner Modal -->
+    <div id="guitar-tuner-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-sm mx-auto flex flex-col bg-black rounded-2xl shadow-2xl border border-gray-800 p-0">
+            <!-- Header -->
+            <div class="flex justify-between items-center p-4 border-b border-gray-800">
+                <h2 class="text-lg font-bold text-gray-200 tracking-wider">GİTAR AKORT ALETİ</h2>
+                <button onclick="closeModal('guitar-tuner-modal')" class="text-gray-500 hover:text-white transition-colors">
+                     <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Main Display Area -->
+            <div class="p-6 flex-grow flex flex-col items-center justify-around">
+
+                <!-- Note Display -->
+                <div class="text-center relative mb-4">
+                    <div id="tuner-note-name" class="text-8xl font-bold text-white transition-colors duration-300">-</div>
+                    <div id="tuner-cents-display" class="text-xl text-gray-500 font-mono h-7">--</div>
+                </div>
+
+                <!-- Visualizer (Needle/Dial) -->
+                <div class="relative w-64 h-32 overflow-hidden mb-4">
+                    <div class="w-full h-full border-t-4 border-l-4 border-r-4 border-gray-700 rounded-t-full absolute bottom-0"></div>
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-4 bg-highlight-green"></div>
+                    <div id="tuner-needle" class="absolute bottom-0 left-1/2 w-1 h-32 bg-highlight-red origin-bottom transition-transform duration-100" style="transform: rotate(0deg);"></div>
+                </div>
+
+                <!-- String Display & Status -->
+                <div class="text-center mb-4">
+                     <div id="tuner-string-name" class="text-lg text-gray-400 h-6">Bir tel çalın</div>
+                </div>
+
+                <!-- Manual Mode String Selectors -->
+                <div id="tuner-string-selectors" class="hidden grid grid-cols-6 gap-2 w-full mt-2">
+                    <!-- Buttons generated by JS -->
+                </div>
+                
+                <!-- Controls -->
+                <div class="flex items-center justify-center gap-4 mt-4 w-full">
+                    <button id="start-tuner-btn" class="w-20 h-20 bg-gray-800 text-white font-bold rounded-full shadow-lg transition-colors border-2 border-transparent hover:border-blue-500 flex items-center justify-center text-sm">
+                        BAŞLAT
+                    </button>
+                    <div id="tuner-mode-selector" class="flex bg-gray-800 p-1 rounded-full">
+                         <button id="auto-mode-btn" class="px-4 py-1 font-semibold rounded-full text-xs text-gray-400">AUTO</button>
+                         <button id="manual-mode-btn" class="px-4 py-1 font-semibold rounded-full text-xs text-gray-400">MANUAL</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="fullscreen-nav-container">
         <button onclick="previousLine()" class="fullscreen-btn left">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -762,7 +841,29 @@ pointer-events: auto;
         const generateShareLinkBtn = document.getElementById('generate-share-link-btn');
         const clearPlaylistBtn = document.getElementById('clear-playlist-btn');
 
+        // Guitar tuner elements
+        const guitarTunerBtn = document.getElementById('guitar-tuner-btn');
+        const guitarTunerModal = document.getElementById('guitar-tuner-modal');
+        const startTunerBtn = document.getElementById('start-tuner-btn');
+
         const loaderOverlay = document.getElementById('loader-overlay');
+
+        // Guitar tuner variables
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let isTunerActive = false;
+        let tunerMode = 'auto'; // 'auto' or 'manual'
+        let currentStringIndex = 0; // For manual mode
+
+        const guitarStrings = [
+            { note: 'E', frequency: 82.41, name: '6. Tel (Kalın Mi)' },
+            { note: 'A', frequency: 110.00, name: '5. Tel (La)' },
+            { note: 'D', frequency: 146.83, name: '4. Tel (Re)' },
+            { note: 'G', frequency: 196.00, name: '3. Tel (Sol)' },
+            { note: 'B', frequency: 246.94, name: '2. Tel (Si)' },
+            { note: 'E', frequency: 329.63, name: '1. Tel (İnce Mi)' }
+        ];
 
         function debounce(func, delay) {
             let timeout;
@@ -819,7 +920,6 @@ pointer-events: auto;
         function selectHymn(index) {
             showLoader();
             
-            // Use setTimeout to allow the loader to render before processing.
             setTimeout(() => {
                 currentHymnIndex = index;
                 renderHymn();
@@ -901,15 +1001,13 @@ pointer-events: auto;
                     const playlistButton = document.createElement('button');
                     let isInPlaylist = userPlaylist.hymns.includes(hymn.title); 
                     
-                    // Set initial icon and styling based on whether hymn is in playlist
                     if (isInPlaylist) {
-                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>'; // Check icon
+                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>';
                         playlistButton.classList.add('bg-green-600', 'text-primary-bg', 'active:bg-green-500');
                     } else {
-                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>'; // Plus icon
+                        playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>';
                         playlistButton.classList.add('bg-highlight-blue', 'text-primary-bg', 'active:bg-blue-600');
                     }
-
                     
                     playlistButton.classList.add('py-2', 'px-4', 'rounded-md', 'text-sm', 'transition-colors', 'duration-300', 'flex', 'items-center', 'justify-center');
                     
@@ -921,12 +1019,12 @@ pointer-events: auto;
                             userPlaylist.hymns = userPlaylist.hymns.filter(t => t !== title);
                             playlistButton.classList.remove('bg-green-600', 'active:bg-green-500');
                             playlistButton.classList.add('bg-highlight-blue', 'active:bg-blue-600');
-                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>'; // Change to Plus icon
+                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>';
                         } else {
                             userPlaylist.hymns.push(title);
                             playlistButton.classList.remove('bg-highlight-blue', 'active:bg-blue-600');
                             playlistButton.classList.add('bg-green-600', 'active:bg-green-500');
-                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>'; // Change to Check icon
+                            playlistButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>';
                         }
                         savePlaylist();
                         
@@ -953,7 +1051,6 @@ pointer-events: auto;
             openModal('all-hymns-modal');
             modalSearchBar.value = '';
             
-            // Defer the rendering to ensure the loader is displayed first for large datasets.
             setTimeout(() => {
                 renderAllHymnsList(hymns);
                 hideLoader();
@@ -962,12 +1059,8 @@ pointer-events: auto;
 
         function filterHymnsList() {
             const query = normalizeText(modalSearchBar.value);
-            
             if (hymns.length === 0) return;
-
-            const filteredHymns = hymns.filter(hymn =>
-                normalizeText(hymn.title).includes(query)
-            );
+            const filteredHymns = hymns.filter(hymn => normalizeText(hymn.title).includes(query));
             renderAllHymnsList(filteredHymns);
         }
 
@@ -1041,12 +1134,7 @@ pointer-events: auto;
                 openModal('casting-modal');
                 return;
             }
-
-            if (!isCastingMode) {
-                enterCastingMode();
-            } else {
-                exitCastingMode();
-            }
+            isCastingMode ? exitCastingMode() : enterCastingMode();
         }
 
         function enterCastingMode() {
@@ -1118,14 +1206,17 @@ pointer-events: auto;
             document.getElementById(modalId).classList.add('visible');
         }
 
-function closeModal(modalId) {
-const modal = document.getElementById(modalId);
-if (modal) {
-modal.style.pointerEvents = 'none';
-modal.classList.remove('visible');
-modal.style.pointerEvents = '';
-}
-}
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                if(modalId === 'guitar-tuner-modal' && isTunerActive) {
+                    stopTuner();
+                }
+                modal.style.pointerEvents = 'none';
+                modal.classList.remove('visible');
+                modal.style.pointerEvents = '';
+            }
+        }
         
         function scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1175,6 +1266,7 @@ modal.style.pointerEvents = '';
             const isClickInsideSearchBar = searchBar.contains(e.target) || suggestionsContainer.contains(e.target) || clearSearchBtn.contains(e.target);
             const isClickInsideAllHymnsModal = allHymnsModal.contains(e.target);
             const isClickInsidePlaylistModal = playlistModal.contains(e.target);
+            const isClickInsideGuitarTunerModal = guitarTunerModal.contains(e.target);
 
             if (!isClickInsideSearchBar) {
                 suggestionsContainer.classList.add('hidden');
@@ -1185,11 +1277,216 @@ modal.style.pointerEvents = '';
             if (!isClickInsidePlaylistModal && !showPlaylistBtn.contains(e.target)) {
                 closeModal('playlist-modal');
             }
+            if (!isClickInsideGuitarTunerModal && !guitarTunerBtn.contains(e.target)) {
+                closeModal('guitar-tuner-modal');
+            }
         });
 
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
+
+        // --- GuitarTuna-like Tuner Functions ---
+
+        function setTunerMode(mode) {
+            tunerMode = mode;
+            const autoBtn = document.getElementById('auto-mode-btn');
+            const manualBtn = document.getElementById('manual-mode-btn');
+            const selectors = document.getElementById('tuner-string-selectors');
+
+            if (mode === 'auto') {
+                autoBtn.classList.add('active');
+                manualBtn.classList.remove('active');
+                selectors.classList.add('hidden');
+            } else {
+                manualBtn.classList.add('active');
+                autoBtn.classList.remove('active');
+                selectors.classList.remove('hidden');
+            }
+            resetTunerDisplay();
+        }
+
+        function initGuitarTuner() {
+            setTunerMode('auto'); // Default to auto
+            const selectorsContainer = document.getElementById('tuner-string-selectors');
+            selectorsContainer.innerHTML = '';
+            guitarStrings.forEach((string, index) => {
+                const button = document.createElement('button');
+                button.className = 'p-2 rounded-lg font-bold text-lg bg-secondary-bg text-text-light transition-colors';
+                button.textContent = string.note;
+                button.dataset.index = index;
+                button.addEventListener('click', () => {
+                    currentStringIndex = index;
+                    document.querySelectorAll('#tuner-string-selectors button').forEach(btn => btn.classList.remove('ring-2', 'ring-highlight-blue'));
+                    button.classList.add('ring-2', 'ring-highlight-blue');
+                    resetTunerDisplay();
+                });
+                selectorsContainer.appendChild(button);
+            });
+             document.getElementById('auto-mode-btn').addEventListener('click', () => setTunerMode('auto'));
+             document.getElementById('manual-mode-btn').addEventListener('click', () => setTunerMode('manual'));
+        }
+        
+        function openGuitarTunerModal(e) {
+            e.stopPropagation();
+            openModal('guitar-tuner-modal');
+            if(!isTunerActive) { // Prevent re-init if already running
+                initGuitarTuner();
+            }
+        }
+
+        function startTuner() {
+            if (isTunerActive) {
+                stopTuner();
+                return;
+            }
+            
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showNotification('Mikrofon erişimi desteklenmiyor.', 'bg-highlight-red');
+                return;
+            }
+            
+            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(function(stream) {
+                isTunerActive = true;
+                startTunerBtn.textContent = "DURDUR";
+                startTunerBtn.classList.add('active');
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                analyser.fftSize = 4096; // Increased for better low-freq resolution
+                microphone.connect(analyser);
+                
+                processAudio();
+                showNotification('Mikrofon bağlandı. Bir tel çalın.', 'bg-highlight-blue');
+            })
+            .catch(function(err) {
+                console.error('Mikrofon erişimi reddedildi:', err);
+                showNotification('Mikrofon erişimi reddedildi.', 'bg-highlight-red');
+            });
+        }
+
+        function stopTuner() {
+            if (!isTunerActive) return;
+            
+            isTunerActive = false;
+            startTunerBtn.textContent = "BAŞLAT";
+            startTunerBtn.classList.remove('active');
+
+            if (microphone) {
+                microphone.disconnect();
+                microphone.mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            if (audioContext) {
+                audioContext.close().then(() => {
+                    audioContext = null;
+                    microphone = null;
+                    analyser = null;
+                });
+            }
+            resetTunerDisplay();
+        }
+
+        function processAudio() {
+            if (!isTunerActive || !analyser) return;
+            
+            const buffer = new Float32Array(analyser.fftSize);
+            analyser.getFloatTimeDomainData(buffer);
+
+            const sampleRate = audioContext.sampleRate;
+            let bestCorrelation = 0;
+            let bestLag = -1;
+            
+            // Autocorrelation to find the fundamental frequency
+            for (let lag = 40; lag < buffer.length; lag++) {
+                let correlation = 0;
+                for (let i = 0; i < buffer.length - lag; i++) {
+                    correlation += buffer[i] * buffer[i+lag];
+                }
+                if (correlation > bestCorrelation) {
+                    bestCorrelation = correlation;
+                    bestLag = lag;
+                }
+            }
+            
+            let frequency = 0;
+            if (bestLag !== -1) {
+                frequency = sampleRate / bestLag;
+            }
+            
+            updateTunerUI(frequency);
+            
+            requestAnimationFrame(processAudio);
+        }
+
+        function findClosestString(frequency) {
+            return guitarStrings.reduce((prev, curr) => {
+                return (Math.abs(curr.frequency - frequency) < Math.abs(prev.frequency - frequency) ? curr : prev);
+            });
+        }
+        
+        function resetTunerDisplay() {
+            const noteNameEl = document.getElementById('tuner-note-name');
+            const centsDisplayEl = document.getElementById('tuner-cents-display');
+            const stringNameEl = document.getElementById('tuner-string-name');
+            const needleEl = document.getElementById('tuner-needle');
+
+            if (noteNameEl) noteNameEl.textContent = '-';
+            if (noteNameEl) noteNameEl.classList.remove('note-in-tune');
+            if (centsDisplayEl) centsDisplayEl.textContent = '--';
+            if (centsDisplayEl) centsDisplayEl.style.color = '#94a3b8';
+            if (stringNameEl) stringNameEl.textContent = 'Bir tel çalın';
+            if (needleEl) {
+                needleEl.style.transform = 'rotate(0deg)';
+                needleEl.style.backgroundColor = '#f87171';
+            }
+        }
+
+        function updateTunerUI(frequency) {
+            const noteNameEl = document.getElementById('tuner-note-name');
+            const centsDisplayEl = document.getElementById('tuner-cents-display');
+            const needleEl = document.getElementById('tuner-needle');
+            const stringNameEl = document.getElementById('tuner-string-name');
+
+            if (!isTunerActive || frequency < 50 || frequency > 1000) {
+                 if(tunerMode === 'auto') resetTunerDisplay();
+                 return;
+            }
+
+            let targetString;
+            if(tunerMode === 'auto'){
+                targetString = findClosestString(frequency);
+            } else {
+                targetString = guitarStrings[currentStringIndex];
+            }
+            
+            const targetFrequency = targetString.frequency;
+            const cents = 1200 * Math.log2(frequency / targetFrequency);
+            
+            noteNameEl.textContent = targetString.note;
+            stringNameEl.textContent = targetString.name;
+            centsDisplayEl.textContent = `${cents >= 0 ? '+' : ''}${Math.round(cents)} sent`;
+
+            // Needle rotation: map -50 cents to -45 deg, +50 cents to +45 deg
+            const rotation = Math.max(-45, Math.min(45, cents * 0.9));
+            needleEl.style.transform = `rotate(${rotation}deg)`;
+
+            // Color feedback
+            if (Math.abs(cents) < 5) { // In-tune threshold
+                noteNameEl.classList.add('note-in-tune');
+                needleEl.style.backgroundColor = '#4ade80'; // green
+                centsDisplayEl.style.color = '#4ade80';
+            } else { // Out of tune
+                noteNameEl.classList.remove('note-in-tune');
+                needleEl.style.backgroundColor = '#f87171'; // red
+                centsDisplayEl.style.color = '#94a3b8'; // subtle-text
+            }
+        }
+        
+        // --- END OF TUNER FUNCTIONS ---
 
         async function initializeApp() {
             showLoader();
@@ -1212,6 +1509,9 @@ modal.style.pointerEvents = '';
                 generateShareLinkBtn.addEventListener('click', openShortenerService);
                 copyPlaylistLinkBtn.addEventListener('click', copyPlaylistLink);
                 clearPlaylistBtn.addEventListener('click', clearPlaylist);
+
+                guitarTunerBtn.addEventListener('click', openGuitarTunerModal);
+                startTunerBtn.addEventListener('click', startTuner);
 
                 playlistNameInput.addEventListener('input', (e) => {
                     userPlaylist.name = e.target.value;
@@ -1315,17 +1615,10 @@ modal.style.pointerEvents = '';
                 return;
             }
 
-            const encodedTitles = userPlaylist.hymns.map(encodeURIComponent);
-            const encodedName = encodeURIComponent(userPlaylist.name);
-            const currentPathname = window.location.pathname;
-            const basePath = currentPathname.endsWith('/') ? currentPathname : currentPathname + '/';
-            const longUrl = `${window.location.origin}${basePath}#playlist=${encodedName}|${encodedTitles.join(',')}`;
-
+            const longUrl = playlistShareLinkInput.value;
             const shortenerCreator = `https://is.gd/create.php?url=${encodeURIComponent(longUrl)}`;
             
             window.open(shortenerCreator, '_blank');
-
-            updateUrlWithPlaylist();
         }
 
         function clearPlaylist() {
@@ -1361,10 +1654,8 @@ modal.style.pointerEvents = '';
                 emptyMessage.classList.add('text-text-subtle', 'text-center', 'p-4');
                 playlistItemsContainer.appendChild(emptyMessage);
                 playlistShareLinkInput.value = '';
-                generateShareLinkBtn.classList.remove('bg-highlight-blue', 'active:bg-blue-600');
                 generateShareLinkBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
                 generateShareLinkBtn.disabled = true; 
-                clearPlaylistBtn.classList.remove('bg-highlight-red', 'active:bg-red-600');
                 clearPlaylistBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
                 clearPlaylistBtn.disabled = true;
             } else {
@@ -1388,7 +1679,7 @@ modal.style.pointerEvents = '';
                     listItem.appendChild(hymnLink);
 
                     const removeBtn = document.createElement('button');
-                    removeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6" /></svg>'; // Minus icon
+                    removeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6" /></svg>';
                    
                     removeBtn.classList.add('bg-highlight-red', 'text-primary-bg', 'py-2', 'px-3', 'rounded-md', 'text-sm', 'transition-colors', 'active:bg-red-600', 'duration-300', 'flex', 'items-center', 'justify-center');
                     removeBtn.addEventListener('click', (e) => {
@@ -1407,10 +1698,8 @@ modal.style.pointerEvents = '';
                     playlistItemsContainer.appendChild(listItem);
                 });
                 generateShareLinkBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
-                generateShareLinkBtn.classList.add('bg-highlight-blue', 'active:bg-blue-600');
                 generateShareLinkBtn.disabled = false; 
                 clearPlaylistBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
-                clearPlaylistBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
                 clearPlaylistBtn.disabled = false;
                 updateUrlWithPlaylist();
             }
@@ -1423,14 +1712,16 @@ modal.style.pointerEvents = '';
         }
 
         function copyPlaylistLink() {
+            if(!playlistShareLinkInput.value) return;
             playlistShareLinkInput.select();
-            document.execCommand('copy'); 
+            document.execCommand('copy');
+            showNotification('Paylaşım linki kopyalandı!', 'bg-highlight-blue');
         }
 
         function showNotification(message, bgColor) {
             const notification = document.createElement('div');
             notification.textContent = message;
-            notification.classList.add('fixed', 'bottom-4', 'right-4', 'p-3', 'rounded-lg', 'shadow-xl', 'text-white', bgColor, 'z-50', 'transition-all', 'duration-300', 'opacity-0', 'transform', 'translate-y-4');
+            notification.classList.add('fixed', 'bottom-4', 'right-4', 'p-3', 'rounded-lg', 'shadow-xl', 'text-white', bgColor, 'z-[250]', 'transition-all', 'duration-300', 'opacity-0', 'transform', 'translate-y-4');
             document.body.appendChild(notification);
 
             setTimeout(() => {

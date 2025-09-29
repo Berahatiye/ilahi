@@ -821,13 +821,13 @@
                 
                 <div class="flex items-center space-x-2 w-full">
                     <button id="show-all-hymns-btn" class="w-full md:w-auto bg-gray-700 active:bg-gray-600 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
-                        İlahi Veri Tabanı
+                        <svg style="margin-inline: auto;" xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#f5f5f7"><path d="M500.67-120q-43 1-108.17-6.5-65.16-7.5-125.67-26.33-60.5-18.84-103.66-50.17Q120-234.33 120-280q0 45.67 43.17 77 43.16 31.33 103.66 50.17Q327.34-134 392.5-126.5q65.17 7.5 108.17 6.5Zm-71-211.33q-40-2.34-74-7.34t-64.17-13q-30.17-8-56-18.5t-48.83-24.16q23 13.66 48.83 24.16t56 18.5q30.17 8 64.17 13t74 7.34ZM480-605q86 0 176.83-26.33 90.84-26.34 111.84-57.67Q747-720 656.5-746.67 566-773.33 480-773.33q-89 0-177.5 25.83T190.67-689q23.66 33 111.83 58.5T480-605Zm-28.33 417.33q8.66 18.34 21 35.34 12.33 17 28 32.33-43 1-108.17-6.5-65.16-7.5-125.67-26.33-60.5-18.84-103.66-50.17Q120-234.33 120-280v-408.67q0-29 30.17-56.33 30.16-27.33 80.16-48.67 50-21.33 115.17-33.83T480-840q66 0 130.17 13.17 64.16 13.16 115.5 35.16 51.33 22 82.83 49t31.5 55.34q0 27.66-30.83 54.66-30.84 27-81.5 47.67Q677-564.33 612.5-551.5 548-538.67 480-538.67q-81 0-156.33-17-75.34-17-137-49.33v137q48 33 118 50.67 70 17.66 145.66 20.66-7.33 13-12.33 29.5t-8.33 35.84q-80-4.34-138.17-20.34-58.17-16-104.83-42.66v117Q198-247 279.33-219.67q81.34 27.34 172.34 32ZM873.33-40 764-149.33q-21.33 15.66-46.33 22.5-25 6.83-51 6.83-72.34 0-122.84-50.5t-50.5-122.83q0-72.34 50.5-122.84t122.84-50.5q72.33 0 122.83 50.5T840-293.33q0 26-6.83 51.33-6.84 25.33-22.5 46L920-86.67 873.33-40ZM666.67-186.67q44.66 0 75.66-31t31-75.66q0-44.67-31-75.67t-75.66-31Q622-400 591-369t-31 75.67q0 44.66 31 75.66t75.67 31Z"/></svg>
                     </button>
                     <button id="show-playlist-btn" class="w-full md:w-auto bg-green-600 active:bg-green-500 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
-                        PLAYLIST
+                        <svg style="margin-inline: auto;" xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#f5f5f7"><path d="m612-550 141-142-28-28-113 113-57-57-28 29 85 85ZM120-160v-66.67h480V-160H120Zm519.93-286.67q-80.26 0-136.76-56.57-56.5-56.57-56.5-136.83 0-80.26 56.57-136.76 56.57-56.5 136.83-56.5 80.26 0 136.76 56.57 56.5 56.57 56.5 136.83 0 80.26-56.57 136.76-56.57 56.5-136.83 56.5ZM120-493.33V-560h258.67q5.88 18.21 13.44 34.77 7.56 16.56 17.22 31.9H120Zm0 166.66v-66.66h404.67q16.86 8.91 35.93 14.95 19.07 6.05 39.4 8.71v43H120Z"/></svg>
                     </button>
                     <button id="guitar-tuner-btn" class="w-full md:w-auto bg-purple-600 active:bg-purple-500 text-text-light font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
-                        Gitar Akort
+                        <svg style="margin-inline: auto;" xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#f5f5f7"><path d="M395.33-120q-64 0-108.66-44.67Q242-209.33 242-273.33T286.67-382q44.66-44.67 108.66-44.67 26.34 0 47.84 7.17 21.5 7.17 38.83 20.17V-840h236v143.33H548.67v423.34q0 64-44.67 108.66Q459.33-120 395.33-120Z"/></svg>
                     </button>
                 </div>
 
@@ -880,7 +880,12 @@
     </button>
 
     <div id="casting-modal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content relative">
+            <button onclick="closeModal('casting-modal')" class="absolute top-2 right-2 p-1 rounded-full bg-secondary-bg hover:bg-gray-600 transition-colors">
+                <svg class="h-6 w-6 text-text-subtle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
             <h3 class="text-2xl font-bold mb-4" id="modal-title"></h3>
             <p class="text-lg mb-6" id="modal-message"></p>
             <button onclick="closeModal('casting-modal')" class="bg-highlight-blue text-primary-bg font-bold py-2 px-4 rounded-lg shadow-lg transition-colors">
@@ -1934,7 +1939,7 @@
 
             if (userPlaylist.hymns.length === 0) {
                 const emptyMessage = document.createElement('div');
-                emptyMessage.textContent = "Çalma listeniz boş. 'İlahi Veri Tabanı' kısmından ilahi ekleyebilirsiniz.";
+                emptyMessage.textContent = "Çalma listeniz boş. 'Veri Tabanı' kısmından ilahi ekleyebilirsiniz.";
                 emptyMessage.classList.add('text-text-subtle', 'text-center', 'p-4');
                 playlistItemsContainer.appendChild(emptyMessage);
                 playlistShareLinkInput.value = '';
@@ -2004,8 +2009,26 @@
 
         function showNotification(message, bgColor) {
             const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.classList.add('fixed', 'bottom-4', 'right-4', 'p-3', 'rounded-lg', 'shadow-xl', 'text-white', bgColor, 'z-[250]', 'transition-all', 'duration-300', 'opacity-0', 'transform', 'translate-y-4');
+            notification.classList.add('fixed', 'bottom-4', 'right-4', 'p-3', 'rounded-lg', 'shadow-xl', 'text-white', bgColor, 'z-[250]', 'transition-all', 'duration-300', 'opacity-0', 'transform', 'translate-y-4', 'flex', 'items-center', 'gap-4');
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            notification.appendChild(messageSpan);
+
+            let removeTimeout;
+
+            const removeNotification = () => {
+                clearTimeout(removeTimeout);
+                notification.classList.remove('opacity-100', 'translate-y-0');
+                notification.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => notification.remove(), 300);
+            };
+
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = `<svg class="w-5 h-5 opacity-70 hover:opacity-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>`;
+            closeBtn.onclick = removeNotification;
+            notification.appendChild(closeBtn);
+
             document.body.appendChild(notification);
 
             setTimeout(() => {
@@ -2013,11 +2036,7 @@
                 notification.classList.add('opacity-100', 'translate-y-0');
             }, 10);
 
-            setTimeout(() => {
-                notification.classList.remove('opacity-100', 'translate-y-0');
-                notification.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
+            removeTimeout = setTimeout(removeNotification, 3000);
         }
     </script>
 </body>

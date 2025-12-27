@@ -6,6 +6,8 @@
     <title>İlahi Prompter</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Berahatiye/ilahi/refs/heads/main/logopng.webp">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -289,6 +291,11 @@
             pointer-events: auto;
         }
 
+        /* FIX: Higher z-index for QR Code Modal so it appears on top of playlist */
+        #qr-code-modal {
+            z-index: 150;
+        }
+
         .modal-content {
             background-color: #1e293b;
             padding: 1rem;
@@ -376,6 +383,7 @@
                  margin-top: 0.4rem; 
             }
             .playlist-modal #generate-share-link-btn,
+            .playlist-modal #show-qr-code-btn,
             .playlist-modal #clear-playlist-btn {
                 height: auto;
             }
@@ -1355,6 +1363,26 @@
         </div>
     </div>
 
+    <!-- QR Code Modal -->
+    <div id="qr-code-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-sm mx-auto flex flex-col items-center bg-secondary-bg p-6 rounded-xl border border-gray-700">
+            <div class="flex justify-between items-center w-full mb-4">
+                <h3 class="text-xl font-bold text-white">QR Kod</h3>
+                <button onclick="closeModal('qr-code-modal')" class="text-text-subtle hover:text-white transition-colors p-1 rounded-full bg-primary-bg">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="qrcode-container" class="bg-white p-4 rounded-lg shadow-xl mb-4">
+                <!-- QR Code will be generated here -->
+            </div>
+            
+            <p class="text-sm text-text-subtle text-center">Bu kodu okutarak listeyi paylaşabilirsiniz.</p>
+        </div>
+    </div>
+
     <div id="all-hymns-modal" class="modal-overlay all-hymns-modal">
         <div class="modal-content w-full max-w-2xl mx-auto flex flex-col">
             <div class="flex justify-between items-center p-2 sm:p-4 border-b border-gray-700">
@@ -1390,7 +1418,7 @@
             <div id="playlist-items-container" class="all-hymns-modal-list px-1 py-0.5 sm:px-2 sm:py-1 space-y-0.5 sm:space-y-1 flex-grow min-h-[5.5rem] overflow-y-auto">
             </div>
             <div class="px-1 py-0.5 sm:px-2 sm:py-1 md:px-4 md:py-2 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between space-y-0.5 sm:space-y-0 sm:space-x-1 flex-wrap mt-0.5 sm:mt-1">
-                <div class="relative w-full sm:w-2/3 mb-0.5 sm:mb-0">
+                <div class="relative w-full sm:w-7/12 mb-0.5 sm:mb-0">
                     <input type="text" id="playlist-share-link" class="w-full p-0.5 sm:p-1 rounded-md bg-primary-bg text-xs sm:text-sm text-text-light border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-blue" readonly>
                     <button id="copy-playlist-link-btn" style="padding:0; background-color: #f5f5f7; border-radius: 0.375rem;" class="absolute inset-y-0 right-0 flex items-center pr-0.5 sm:pr-1 focus:outline-none text-text-subtle active:text-text-light">
                         <svg class="h-3 w-3 sm:h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -1399,9 +1427,19 @@
                         </svg>
                     </button>
                 </div>
-                <button id="generate-share-link-btn" class="w-full sm:w-1/3 bg-highlight-blue active:bg-blue-600 text-primary-bg font-bold py-0.5 px-1 sm:py-1 sm:px-2 rounded-lg shadow-lg transition-colors text-xs sm:text-sm">
-                    Paylaşım Li̇nki̇ni̇ Kısalt
-                </button>
+                
+                <div class="flex w-full sm:w-5/12 gap-1">
+                    <button id="generate-share-link-btn" class="flex-grow bg-highlight-blue active:bg-blue-600 text-primary-bg font-bold py-0.5 px-1 sm:py-1 sm:px-2 rounded-lg shadow-lg transition-colors text-xs sm:text-sm">
+                        Linki Kısalt
+                    </button>
+                    <button id="show-qr-code-btn" class="flex-none w-10 sm:w-auto bg-purple-600 active:bg-purple-500 text-text-light font-bold py-0.5 px-1 sm:py-1 sm:px-2 rounded-lg shadow-lg transition-colors text-xs sm:text-sm flex items-center justify-center" title="QR Kod Göster">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75z" />
+                        </svg>
+                        <span class="hidden sm:inline ml-1">QR</span>
+                    </button>
+                </div>
             </div>
             <div class="px-1 py-0.5 sm:px-2 sm:py-1 md:px-4 md:py-2 border-t border-gray-700 mt-0.5 sm:mt-1">
                 <button id="clear-playlist-btn" class="w-full bg-highlight-red active:bg-red-600 text-primary-bg font-bold py-0.5 px-1 sm:py-1 sm:px-2 rounded-lg shadow-lg transition-colors text-xs sm:text-sm">
@@ -1584,6 +1622,8 @@
         const copyPlaylistLinkBtn = document.getElementById('copy-playlist-link-btn');
         const generateShareLinkBtn = document.getElementById('generate-share-link-btn');
         const clearPlaylistBtn = document.getElementById('clear-playlist-btn');
+        const showQrCodeBtn = document.getElementById('show-qr-code-btn');
+        const qrCodeModal = document.getElementById('qr-code-modal');
 
         
         const guitarTunerBtn = document.getElementById('guitar-tuner-btn');
@@ -2029,28 +2069,23 @@
         });
 
         document.addEventListener('click', (e) => {
+            // Updated Logic: Only handle search/suggestion closing here. 
+            // Modal closing logic is now handled by individual overlay listeners.
+            
             const isClickInsideSearchBar = searchBar.contains(e.target) || suggestionsContainer.contains(e.target) || clearSearchBtn.contains(e.target);
-            const isClickInsideAllHymnsModal = allHymnsModal.contains(e.target);
-            const isClickInsidePlaylistModal = playlistModal.contains(e.target);
-            const isClickInsideGuitarTunerModal = guitarTunerModal.contains(e.target);
-            const isClickInsideShepherdModal = shepherdModal.contains(e.target);
-            const shepherdModeBtnEl = document.getElementById('shepherd-mode-btn');
 
             if (!isClickInsideSearchBar) {
                 suggestionsContainer.classList.add('hidden');
             }
-            if (!isClickInsideAllHymnsModal && !showAllHymnsBtn.contains(e.target)) {
-                 closeModal('all-hymns-modal');
-            }
-            if (!isClickInsidePlaylistModal && !showPlaylistBtn.contains(e.target)) {
-                closeModal('playlist-modal');
-            }
-            if (!isClickInsideGuitarTunerModal && !guitarTunerBtn.contains(e.target)) {
-                closeModal('guitar-tuner-modal');
-            }
-            if (!isClickInsideShepherdModal && shepherdModeBtnEl && !shepherdModeBtnEl.contains(e.target)) {
-                closeModal('shepherd-modal');
-            }
+        });
+
+        // Add listeners for modal overlays to handle "click outside"
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal(this.id);
+                }
+            });
         });
 
         document.addEventListener('contextmenu', (e) => {
@@ -2685,6 +2720,9 @@
                 generateShareLinkBtn.addEventListener('click', openShortenerService);
                 copyPlaylistLinkBtn.addEventListener('click', copyPlaylistLink);
                 clearPlaylistBtn.addEventListener('click', clearPlaylist);
+                
+                // Add event listener for QR code
+                showQrCodeBtn.addEventListener('click', openQrCodeModal);
 
                 guitarTunerBtn.addEventListener('click', openGuitarTunerModal);
                 startTunerBtn.addEventListener('click', startTuner);
@@ -2799,6 +2837,9 @@
                 clearPlaylistBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
                 clearPlaylistBtn.classList.add('bg-highlight-red', 'active:bg-red-600');
                 clearPlaylistBtn.disabled = false;
+                showQrCodeBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                showQrCodeBtn.classList.add('bg-purple-600', 'active:bg-purple-500');
+                showQrCodeBtn.disabled = false;
             } else {
                 
                 playlistShareLinkInput.value = '';
@@ -2808,6 +2849,37 @@
                 clearPlaylistBtn.classList.remove('bg-highlight-red', 'active:bg-red-600');
                 clearPlaylistBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
                 clearPlaylistBtn.disabled = true;
+                showQrCodeBtn.classList.remove('bg-purple-600', 'active:bg-purple-500');
+                showQrCodeBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
+                showQrCodeBtn.disabled = true;
+            }
+        }
+        
+        function openQrCodeModal() {
+            if (userPlaylist.hymns.length === 0) return;
+            
+            // Ensure URL is up to date
+            updateUrlWithPlaylist();
+            const url = playlistShareLinkInput.value;
+            
+            if(!url) return;
+            
+            openModal('qr-code-modal');
+            
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = ''; // Clear previous code
+            
+            try {
+                new QRCode(container, {
+                    text: url,
+                    width: 256,
+                    height: 256,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.L
+                });
+            } catch (e) {
+                container.innerHTML = '<p class="text-red-500">QR Kod oluşturulamadı.</p>';
             }
         }
 

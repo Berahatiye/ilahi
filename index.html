@@ -451,10 +451,12 @@
             }
         }
 
+        /* --- UPDATED FLOATING ACTION BUTTONS --- */
         #go-to-top-btn {
             position: fixed;
-            bottom: 2px;
-            right: 2px;
+            bottom: 1.5rem; /* ~24px, user requested left & bottom */
+            left: 1.5rem;
+            right: auto; /* Reset right positioning */
             background-color: #a5b4fc;
             color: #0f172a;
             border-radius: 9999px;
@@ -467,12 +469,29 @@
             opacity: 0;
         }
 
-        #go-to-top-btn.visible {
+        #next-playlist-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem; /* User requested "like this just as right arrow" */
+            background-color: #a5b4fc;
+            color: #0f172a;
+            border-radius: 9999px;
+            padding: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 50;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        #go-to-top-btn.visible, #next-playlist-btn.visible {
             transform: scale(1);
             opacity: 1;
         }
 
-        body.full-screen #go-to-top-btn {
+        body.full-screen #go-to-top-btn, 
+        body.full-screen #next-playlist-btn {
             display: none !important;
         }
 
@@ -1137,9 +1156,17 @@
         </div>
     </div>
 
-    <button id="go-to-top-btn" class="p-4 rounded-full shadow-lg transition-transform duration-300" onclick="scrollToTop()">
+    <!-- Modified Go-to-Top / Reset Button (Left Bottom) -->
+    <button id="go-to-top-btn" class="p-4 rounded-full shadow-lg transition-transform duration-300" onclick="scrollToTop()" title="Başa Dön / Sıfırla">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+    </button>
+
+    <!-- New Next Playlist Item Button (Right Bottom) -->
+    <button id="next-playlist-btn" class="p-4 rounded-full shadow-lg transition-transform duration-300" onclick="nextInPlaylist()" title="Sıradaki İlahi">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
     </button>
 
@@ -1438,6 +1465,7 @@
         const modalSearchBar = document.getElementById('modal-search-bar');
         const hymnsListContainer = document.getElementById('hymns-list');
         const goToTopBtn = document.getElementById('go-to-top-btn');
+        const nextPlaylistBtn = document.getElementById('next-playlist-btn');
         const hymnCountSpan = document.getElementById('hymn-count');
 
         const showPlaylistBtn = document.getElementById('show-playlist-btn');
@@ -1564,6 +1592,9 @@
                 closeModal('all-hymns-modal');
                 closeModal('playlist-modal');
                 hideLoader();
+                
+                // Check if scroll is at top (it usually is after render), so hide buttons
+                toggleFloatingButtons(); 
             }, 50);
         }
 
@@ -1855,18 +1886,96 @@
             }
         }
         
+        /* MODIFIED: scrollToTop now also resets to the first lyric
+        */
         function scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            lyricsScrollContainer.scrollTo({ top: 0, behavior: 'smooth' }); // Added: scroll container to top
+            
+            if (currentHymnIndex !== -1) {
+                currentLineIndex = 0;
+                updateLyrics();
+            }
         }
 
-        const debouncedScrollHandler = debounce(() => {
-            const isScrolledToBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 5);
-            if (isScrolledToBottom && document.documentElement.scrollHeight > window.innerHeight) {
+        /*
+            NEW: Go to next hymn in playlist
+        */
+        function nextInPlaylist() {
+            if (userPlaylist.hymns.length === 0) {
+                showNotification('Çalma listeniz boş.', 'bg-highlight-red');
+                return;
+            }
+
+            const currentTitle = hymns[currentHymnIndex]?.title;
+            
+            // Find current index in playlist. Returns -1 if not found.
+            let playlistIndex = userPlaylist.hymns.indexOf(currentTitle);
+            
+            // Calculate next index. If at end, loop to 0. If current not in playlist, start at 0.
+            let nextIndex = playlistIndex + 1;
+            
+            if (playlistIndex === -1) {
+                nextIndex = 0;
+            } else if (nextIndex >= userPlaylist.hymns.length) {
+                nextIndex = 0; // Loop back to start
+                showNotification('Listenin başına dönüldü.', 'bg-highlight-blue');
+            }
+
+            const nextTitle = userPlaylist.hymns[nextIndex];
+            const nextHymnIndex = hymns.findIndex(h => h.title === nextTitle);
+
+            if (nextHymnIndex !== -1) {
+                selectHymn(nextHymnIndex);
+            } else {
+                showNotification('Sıradaki ilahi bulunamadı.', 'bg-highlight-red');
+            }
+        }
+
+        // --- NEW SCROLL VISIBILITY LOGIC (Only at Bottom) ---
+        function toggleFloatingButtons() {
+            const buffer = 20; // Tolerance in pixels for "reaching bottom"
+            
+            // Check Lyrics Container Scroll
+            const containerScrollHeight = lyricsScrollContainer.scrollHeight;
+            const containerClientHeight = lyricsScrollContainer.clientHeight;
+            const containerScrollTop = lyricsScrollContainer.scrollTop;
+            
+            // Check Window Scroll
+            const windowScrollHeight = document.documentElement.scrollHeight;
+            const windowClientHeight = window.innerHeight;
+            const windowScrollTop = window.scrollY;
+
+            let isAtBottom = false;
+
+            // Logic: 
+            // 1. If lyrics container has scrollable content, check if IT is at the bottom.
+            if (containerScrollHeight > containerClientHeight) {
+                if (containerScrollTop + containerClientHeight >= containerScrollHeight - buffer) {
+                    isAtBottom = true;
+                }
+            } 
+            // 2. If lyrics container doesn't scroll, check if the WINDOW/BODY scrolls and is at the bottom.
+            else if (windowScrollHeight > windowClientHeight) {
+                if (windowScrollTop + windowClientHeight >= windowScrollHeight - buffer) {
+                    isAtBottom = true;
+                }
+            } 
+            // 3. If neither scrolls (content fits on screen), we are technically "at the bottom" immediately.
+            //    Showing the buttons here allows "Next Playlist" to be accessible without scrolling.
+            else {
+                isAtBottom = true; 
+            }
+
+            if (isAtBottom) {
                 goToTopBtn.classList.add('visible');
+                nextPlaylistBtn.classList.add('visible');
             } else {
                 goToTopBtn.classList.remove('visible');
+                nextPlaylistBtn.classList.remove('visible');
             }
-        }, 100);
+        }
+
 
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement) {
@@ -1884,8 +1993,6 @@
                 }
             }
         });
-
-        window.addEventListener('scroll', debouncedScrollHandler);
 
         document.addEventListener('keydown', (e) => {
             if (currentHymnIndex !== -1) {
@@ -2668,6 +2775,10 @@
 
                 guitarTunerBtn.addEventListener('click', openGuitarTunerModal);
                 startTunerBtn.addEventListener('click', startTuner);
+
+                // Add scroll listener for floating buttons
+                lyricsScrollContainer.addEventListener('scroll', toggleFloatingButtons);
+                window.addEventListener('scroll', toggleFloatingButtons);
 
                 
                 initShepherdMode();
